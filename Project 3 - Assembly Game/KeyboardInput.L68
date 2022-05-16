@@ -1,0 +1,57 @@
+00000000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/15/2021 1:05:17 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :KeyboardInput
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:Gets user input from the keyboard, and returns a keycode 
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  getKeyboardInput:
+Line 8 ERROR: Undefined symbol
+00000000                             8      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00000000                             9  
+Line 10 ERROR: Undefined symbol
+00000000  223C 004DBD16             10      move.l  #KEY_SPACE_INPUT, d1 
+Line 11 ERROR: Undefined symbol
+00000006  103C 0016                 11      move.b  #USER_INPUT_TRAP_CODE, d0 
+0000000A  4E4F                      12      trap    #15
+Line 13 ERROR: Undefined symbol
+0000000C  2F41 55B8                 13      move.l  d1,KEYCODE_VALUE(sp) 
+00000010                            14      
+Line 15 ERROR: Undefined symbol
+00000010                            15      movem.l (sp)+, ALL_REG
+00000010  4E75                      16      rts                                        ** return, and reset the stack 
+00000012                            17      
+00000012                            18  getMouseInput: 
+Line 19 ERROR: Undefined symbol
+00000012                            19      movem.l ALL_REG, -(sp)
+00000012                            20      
+00000012  123C 0002                 21      move.b  #2, d1 
+00000016  103C 003D                 22      move.b  #61, d0 
+0000001A  4E4F                      23      trap    #15
+0000001C  0C00 0001                 24      cmpi.b  #1, d0 
+00000020  66F0                      25      bne     getMouseInput
+00000022                            26      ;move.w  d1, d2                          ** Y 
+00000022                            27      ;swap    d1 
+00000022                            28      ;move.w  d1, d3                          ** X
+00000022                            29  returnGetMouseInput:
+Line 30 ERROR: Undefined symbol
+00000022                            30      movem.l (sp)+, ALL_REG
+00000022  4E75                      31      rts                                        ** return, and reset the stack 
+00000024                            32      
+00000024                            33      
+00000024                            34      
+Line 35 WARNING: END directive missing, starting address not set
+
+7 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+GETKEYBOARDINPUT    0
+GETMOUSEINPUT       12
+RETURNGETMOUSEINPUT  22

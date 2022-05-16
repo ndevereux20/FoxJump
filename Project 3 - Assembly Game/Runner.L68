@@ -1,0 +1,1452 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 5/5/2022 1:28:23 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :Runner 
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description: This is the main file of the game, it houses all global values, loaded in files (including other x68 files and bitmap files), and arrays/variables at the bottom of the file 
+00000000                             6  *there are 3 different areas in this file, the start loop, loads all appropriate values into registers, and shows the start screen to the user until the user presses enter. 
+00000000                             7  *The game loop which calls all necesary functions that should happen (including drawing the player, objects, getting collisions, drawing seven segment, adding scores, redrawing backgrounds, and swapping buffers)
+00000000                             8  *this loops until the win condition (reach score 99) or the lose condition (hit an object). The end screen is then loaded.
+00000000                             9  *the last area is the end game, where it displays your scores and prompts you to play again, sending you back to the game loop. 
+00000000                            10  *-----------------------------------------------------------
+00000000                            11  *Controlls: 
+00000000                            12  * press space to jump 
+00000000                            13  * click to continue from start screen and end screen to game screen 
+00000000                            14  * esc to quit the application on start and end screens
+00000000                            15  *-----------------------------------------------------------
+00000000                            16  ** global values 
+00000000                            17  ** offset to reisters when passed to the stack 
+00000000                            18  ALL_REG         REG     D0-D7/A0-A6
+00000000  =00000000                 19  D0_OFFSET       EQU     0
+00000000  =00000004                 20  D1_OFFSET       EQU     4
+00000000  =00000008                 21  D2_OFFSET       EQU     8
+00000000  =0000000C                 22  D3_OFFSET       EQU     12
+00000000  =00000010                 23  D4_OFFSET       EQU     16
+00000000  =00000014                 24  D5_OFFSET       EQU     20
+00000000  =00000018                 25  D6_OFFSET       EQU     24
+00000000  =0000001C                 26  D7_OFFSET       EQU     28
+00000000  =00000020                 27  A0_OFFSET       EQU     32
+00000000  =00000024                 28  A1_OFFSET       EQU     36
+00000000  =00000028                 29  A2_OFFSET       EQU     40
+00000000  =0000002C                 30  A3_OFFSET       EQU     44
+00000000  =00000030                 31  A4_OFFSET       EQU     48  
+00000000  =00000034                 32  A5_OFFSET       EQU     52
+00000000  =00000038                 33  A6_OFFSET       EQU     56
+00000000                            34  
+00000000                            35  ** used in the draw bitmap function for local variables 
+00000000  =00000004                 36  CUR_DISPLAY_X      EQU     4
+00000000  =00000008                 37  CUR_DISPLAY_Y      EQU     8
+00000000  =0000000C                 38  LOOP_COUNTER       EQU     12
+00000000  =00000004                 39  ERROR_COUNTER_OFFSET      EQU     4
+00000000                            40  
+00000000                            41  ** used as constants to offsets from the start of the .bmp header file to important info 
+00000000  =00000002                 42  OFFSET_TO_FILE_SIZE     EQU     2
+00000000  =00000012                 43  OFFSET_TO_IMAGE_WIDTH   EQU     18
+00000000  =00000016                 44  OFFSET_TO_IMAGE_HEIGHT  EQU     22 
+00000000  =0000000A                 45  OFFSET_TO_IMAGE_OFFSET  EQU     10
+00000000  =0000001C                 46  OFFSET_TO_IMAGE_BIT_DEPTH   EQU     28
+00000000                            47  
+00000000                            48  ** used for checks that it is the right type of file 
+00000000  =00000020                 49  BIT_DEPTH                EQU     $20 
+00000000  =0000424D                 50  BMP_FILE_TYPE            EQU     $424D
+00000000                            51  
+00000000                            52  ** trap code commands for drawing on the screen  
+00000000  =00000051                 53  FILL_COLOR_TRAP__CODE   EQU     81
+00000000  =00000050                 54  PEN_COLOR_TRAP_CODE     EQU     80
+00000000  =00000052                 55  DRAW_PIXEL_TRAP_CODE    EQU     82
+00000000  =00000021                 56  SET_OUTPUT_RESOLUTION_TRAP_CODE EQU     33 
+00000000  =0000005E                 57  REPAINT_SCREEN_TRAP_CODE    EQU     94
+00000000  =0000000B                 58  CLEAR_SCREEN_COMMAND    EQU     11
+00000000  =0000005C                 59  DRAWING_MODE_TRAP_CODE  EQU 92
+00000000  =00000011                 60  DOUBLE_BUFFERED_MODE    EQU 17
+00000000  =00000057                 61  DRAW_RECTANGLE_COMMAND      EQU     87 
+00000000  =0000005D                 62  PEN_WIDTH_TRAP_CODE     EQU     93 
+00000000  =00000054                 63  DRAW_LINE_TRAP_CODE     EQU     84 
+00000000  =00000015                 64  SET_FONT_PROPERTIES_TRAP_CODE   EQU     21 
+00000000  =0000000E                 65  DISPLAY_STRING_TRAP_CODE    EQU     14 
+00000000  =0000003D                 66  MOUSE_STATE_TRAP_CODE       EQU     61
+00000000                            67  
+00000000                            68  *pen width for seven segment 
+00000000  =00000002                 69  PEN_WIDTH       EQU     2 
+00000000                            70  
+00000000                            71  ** keyboard values and trap code 
+00000000  =00000013                 72  USER_INPUT_TRAP_CODE    EQU     19
+00000000  =00000020                 73  KEY_SPACE_INPUT         EQU     $20
+00000000  =0000001B                 74  KEY_ESCAPE_INPUT        EQU     $1B
+00000000                            75  
+00000000                            76  
+00000000  =0000FF00                 77  CLEAR_SCREEN_MAGIC_VAL  EQU     $FF00
+00000000                            78  
+00000000                            79  ** new line and reset position values 
+00000000  =0000000D                 80  CR      EQU     $0D
+00000000  =0000000A                 81  LF      EQU     $0A
+00000000                            82  
+00000000                            83  ** display window info 
+00000000  =00000280                 84  DISPLAY_WINDOW_WIDTH    EQU     640   
+00000000  =000001E0                 85  DISPLAY_WINDOW_HEIGHT   EQU     480
+00000000                            86  
+00000000                            87  ** player variables 
+00000000  =00808000                 88  SPRITE_BACKGROUND_COLOR     EQU     $808000
+00000000  =00000006                 89  RUNNING_SPRITE_COUNT        EQU     $6
+00000000  =00000014                 90  JUMP_VELOCITY       EQU     20
+00000000  =FFFFFF52                 91  GRAVITY             EQU     -174
+00000000                            92  
+00000000                            93  
+00000000                            94  ** Offset to keycode value 
+00000000  =00000040                 95  KEYCODE_VALUE       EQU     64
+00000000                            96  
+00000000                            97  ** players current position and chunk size to redraw background at 
+00000000  =00000044                 98  PLAYER_X_CROP       EQU     68
+00000000  =00000048                 99  PLAYER_Y_CROP       EQU     72
+00000000  =0000004C                100  PLAYER_WIDTH        EQU     76
+00000000  =00000050                101  PLAYER_HEIGHT       EQU     80
+00000000  =00000054                102  PLAYER_X_DISPLAY    EQU     84
+00000000  =00000058                103  PLAYER_Y_DISPLAY    EQU     88
+00000000                           104  
+00000000                           105  *current location to crop at on the player sprite sheet to run through animations. 
+00000000  =0000005C                106  PLAYER_SPRITE_X_CROP   EQU     92
+00000000  =00000060                107  PLAYER_SPRITE_Y_CROP   EQU     96
+00000000  =00000064                108  PLAYER_SPRITE_WIDTH    EQU     100
+00000000  =00000068                109  PLAYER_SPRITE_HEIGHT   EQU     104
+00000000  =0000006C                110  PLAYER_SPRITE_X_DISPLAY    EQU     108
+00000000  =00000070                111  PLAYER_SPRITE_Y_DISPLAY    EQU     112
+00000000                           112  
+00000000                           113  
+00000000  =00000074                114  PLAYER_SPRITE_SHEET_POINTER    EQU     116
+00000000  =00000078                115  BACKGROUND_SPRITE_SHEET_POINTER     EQU     120
+00000000                           116  
+00000000  =0000007C                117  CUR_PLAYER_VELOCITY     EQU     124
+00000000  =00000080                118  CUR_PLAYER_CHANGE_IN_VELOCITY   EQU 128
+00000000  =00000084                119  IS_JUMPING      EQU     132
+00000000                           120  
+00000000  =00000088                121  RANDOM_VALUE    EQU     136
+00000000                           122  
+00000000                           123  ** Offsets for moving objects
+00000000  =0000008C                124  OBJECT_3_X_CROP     EQU     140
+00000000  =00000090                125  OBJECT_3_Y_CROP     EQU     144
+00000000  =00000094                126  OBJECT_3_WIDTH    EQU     148   
+00000000  =00000098                127  OBJECT_3_HEIGHT   EQU     152
+00000000  =0000009C                128  OBJECT_3_X_DISPLAY     EQU     156
+00000000  =000000A0                129  OBJECT_3_Y_DISPLAY     EQU     160
+00000000                           130  
+00000000  =000000A4                131  OBJECT_2_X_CROP     EQU     164
+00000000  =000000A8                132  OBJECT_2_Y_CROP     EQU     168
+00000000  =000000AC                133  OBJECT_2_WIDTH    EQU     172 
+00000000  =000000B0                134  OBJECT_2_HEIGHT   EQU     176
+00000000  =000000B4                135  OBJECT_2_X_DISPLAY     EQU     180
+00000000  =000000B8                136  OBJECT_2_Y_DISPLAY     EQU     184
+00000000                           137      
+00000000  =000000BC                138  OBJECT_1_X_CROP     EQU     188
+00000000  =000000C0                139  OBJECT_1_Y_CROP     EQU     192
+00000000  =000000C4                140  OBJECT_1_WIDTH    EQU     196 
+00000000  =000000C8                141  OBJECT_1_HEIGHT   EQU     200
+00000000  =000000CC                142  OBJECT_1_X_DISPLAY     EQU     204
+00000000  =000000D0                143  OBJECT_1_Y_DISPLAY     EQU     208
+00000000                           144  
+00000000  =000000D4                145  OBSTICLES_SPRITE_SHEET_POINTER     EQU     212
+00000000                           146  
+00000000  =000000D8                147  DESTROY_OBJECT_BOOL     EQU     216
+00000000                           148  
+00000000                           149  * score values 
+00000000  =000000DC                150  SCORE       EQU     220
+00000000  =000000E0                151  SCORE_ADDED_BOOL    EQU     224
+00000000                           152  
+00000000  =000000E4                153  QUIT_APP_BOOL       EQU     228
+00000000                           154  
+00000000  =000000A8                155  STACK_POINTER_OFFSET    EQU     168      ** how much offset to add to the stack pointer for passing in paramaters onto the stack
+00000000  =00000040                156  REGISTERS_OFFSET        EQU     64      ** register offset while in main
+00000000  =0000003C                157  REGISTERS_OFFSET_2      EQU     60      ** register offset for putPlayerSpriteInRegisters and putPlayerCropLocationInRegisters, because it includes the PC
+00000000                           158  ** moving object variables 
+00000000  =00000023                159  OBJECT_VELOCITY     EQU     35
+00000000  =00000009                160  FRAMES_SKIP_TO_DRAW     EQU    9
+00000000  =00000006                161  DRAW_PARAMETERS     EQU     6
+00000000                           162  
+00000000                           163  
+00000000                           164  **Colors 
+00000000  =00000000                165  OBSTICLE_BACKGROUND_COLOR   EQU     $00000000
+00000000                           166  ** moving objects color 
+00000000  =00FFFFFF                167  WHITE           equ $00FFFFFF
+00000000  =FFA500FF                168  TITLE_FONT_COLOR    equ $FFA500FF
+00000000                           169  
+00000000                           170  
+00000000                           171  ** paramaters
+00000000                           172  *d0 - top left corner of bitmap to be displayed (x)
+00000000                           173  *d1 - top right corner of bitmap to be displayed (y)
+00000000                           174  *d2 - width of chunk 
+00000000                           175  *d3 - height of chunk
+00000000                           176  *d4 - top left corner of the display screen (x)
+00000000                           177  *d5 - top left corner of the display screen (y)
+00000000                           178  *d6 - player sprite counter 
+00000000                           179  *d7 - frames since an object has been spawned 
+00000000                           180  ** memory registers 
+00000000                           181  *a0 - pointer to the start of the .bmp file of player sprites 
+00000000                           182  *a1 - pointer to the start of the .bmp file of the background 
+00000000                           183  *a2 - 
+00000000                           184  *a3 - 
+00000000                           185  *a4 - pointer to an array of obsticleLocations on the stack 
+00000000                           186  *a5 - pointer to the start of the .bmp file of the obsticles 
+00000000                           187  *a6 - pointer to an array of crop locations for the 4 obsticle sprites in the obsticles sprite sheet
+00001000                           188  START    ORG    $1000
+00001000                           189  
+00001000                           190   
+00001000                           191      * loads tables and bitmaps into memory as listed above 
+00001000  43F9 0012D2CA            192      lea     bitmap32, a1                                          
+00001006  49F9 00729456            193      lea     obsticleLocation, a4
+0000100C  4BF9 0036FB54            194      lea     obsticles, a5
+00001012  4DF9 0072949E            195      lea     obsticleSprites, a6 
+00001018                           196      *set double buffered mode                   
+00001018  103C 005C                197      move.b  #DRAWING_MODE_TRAP_CODE,d0          
+0000101C  123C 0011                198      move.b  #DOUBLE_BUFFERED_MODE,d1
+00001020  4E4F                     199      trap    #15    
+00001022  4280                     200      clr.l   d0
+00001024  4281                     201      clr.l   d1
+00001026                           202      
+00001026  103C 003C                203      move.b  #60,d0          ; set mouse IRQ
+0000102A  323C 0101                204      move.w  #$0101,d1       ; IRQ1 for mouse down
+0000102E  4E4F                     205      trap    #15
+00001030                           206      
+00001030  2C3C 000000A8            207      move.l  #STACK_POINTER_OFFSET, d6         ; make room for the objects position on the stack 
+00001036  9FC6                     208      sub.l   d6, sp
+00001038                           209      
+00001038                           210      ** set window size 
+00001038  103C 0021                211      move.b  #SET_OUTPUT_RESOLUTION_TRAP_CODE, d0    
+0000103C  223C 00000280            212      move.l  #DISPLAY_WINDOW_WIDTH,d1 
+00001042  4841                     213      swap.w  d1 
+00001044  323C 01E0                214      move.w  #DISPLAY_WINDOW_HEIGHT,d1
+00001048  4E4F                     215      trap    #15 
+0000104A                           216      
+0000104A                           217  loadingScreen: 
+0000104A                           218      ** paramaters for loading in the loading screen 
+0000104A  7001                     219      move.l  #1, d0
+0000104C  7201                     220      move.l  #1, d1
+0000104E  243C 0000010B            221      move.l  #267, d2
+00001054  766E                     222      move.l  #110, d3
+00001056  283C 000000CF            223      move.l  #207, d4
+0000105C  2A3C 000000B9            224      move.l  #185, d5
+00001062  41F9 0038819E            225      lea     loading, a0 
+00001068  4EB9 00729B02            226      jsr     drawBackground 
+0000106E  4EB9 00001276            227      jsr     swapBuffers 
+00001074                           228      
+00001074  2F7C 00000000 00A4       229      move.l  #0, (QUIT_APP_BOOL - REGISTERS_OFFSET)(sp)
+0000107C                           230  loadstartScreen:    
+0000107C                           231      ** paramaters for loading the start screen  
+0000107C  7000                     232      move.l  #0, d0
+0000107E  7200                     233      move.l  #0, d1
+00001080  243C 00000280            234      move.l  #DISPLAY_WINDOW_WIDTH, d2
+00001086  263C 000001E0            235      move.l  #DISPLAY_WINDOW_HEIGHT, d3
+0000108C  7800                     236      move.l  #0, d4
+0000108E  7A00                     237      move.l  #0, d5
+00001090  41F9 005FD3DC            238      lea     startScreen, a0 
+00001096  4EB9 00729B02            239      jsr     drawBackground 
+0000109C  4EB9 00001276            240      jsr     swapBuffers 
+000010A2                           241  loadGame: 
+000010A2                           242      **intitial paramaters for drawing the background 
+000010A2  7000                     243      move.l  #0, d0
+000010A4  722D                     244      move.l  #45, d1
+000010A6  243C 00000280            245      move.l  #DISPLAY_WINDOW_WIDTH, d2
+000010AC  263C 000001B3            246      move.l  #435, d3
+000010B2  7800                     247      move.l  #0, d4
+000010B4  7A2D                     248      move.l  #45, d5
+000010B6  41F9 00001294            249      lea     background, a0  
+000010BC  4EB9 00729B02            250      jsr     drawBackground 
+000010C2  4EB9 00729A10            251      jsr     getMouseInput           ** doesnt swap buffers until the user left clicks anywhere on the screen 
+000010C8                           252      
+000010C8  202F 00A4                253      move.l  (QUIT_APP_BOOL - REGISTERS_OFFSET)(sp), d0 
+000010CC  0C80 00000001            254      cmpi.l  #1, d0 
+000010D2  6700 01B2                255      beq     stop
+000010D6                           256  startGame: 
+000010D6  4EB9 00001276            257      jsr     swapBuffers
+000010DC                           258      
+000010DC                           259      * initialize variables on the stack 
+000010DC  2F7C 00000014 003C       260      move.l  #JUMP_VELOCITY, (CUR_PLAYER_VELOCITY - REGISTERS_OFFSET)(sp)
+000010E4  2F7C 00000014 0040       261      move.l  #JUMP_VELOCITY, (CUR_PLAYER_CHANGE_IN_VELOCITY - REGISTERS_OFFSET)(sp)
+000010EC  2F7C 00000000 009C       262      move.l  #0, (SCORE - REGISTERS_OFFSET)(sp)
+000010F4  2F7C 00000001 00A0       263      move.l  #1, (SCORE_ADDED_BOOL - REGISTERS_OFFSET)(sp) 
+000010FC                           264      
+000010FC                           265      
+000010FC                           266      ** move the stack pointers into memory to be accessed later
+000010FC  2F4D 0094                267      move.l  a5, (OBSTICLES_SPRITE_SHEET_POINTER - REGISTERS_OFFSET)(sp)
+00001100  2F49 0034                268      move.l  a1, (PLAYER_SPRITE_SHEET_POINTER - REGISTERS_OFFSET)(sp)
+00001104  2F48 0038                269      move.l  a0, (BACKGROUND_SPRITE_SHEET_POINTER - REGISTERS_OFFSET)(sp)
+00001108                           270      
+00001108                           271      
+00001108                           272      ** initializing paramaters for the player sprite running animation 
+00001108  2F7C 00000000 001C       273      move.l  #0,(PLAYER_SPRITE_X_CROP - REGISTERS_OFFSET)(sp)                            
+00001110  2F7C 00000069 0020       274      move.l  #105,(PLAYER_SPRITE_Y_CROP - REGISTERS_OFFSET)(sp)
+00001118  2F7C 00000045 0024       275      move.l  #69,(PLAYER_SPRITE_WIDTH - REGISTERS_OFFSET)(sp)
+00001120  2F7C 00000046 0028       276      move.l  #70,(PLAYER_SPRITE_HEIGHT - REGISTERS_OFFSET)(sp)
+00001128  2F7C 000000C8 002C       277      move.l  #200,(PLAYER_SPRITE_X_DISPLAY - REGISTERS_OFFSET)(sp)
+00001130  2F7C 0000019A 0030       278      move.l  #410,(PLAYER_SPRITE_Y_DISPLAY - REGISTERS_OFFSET)(sp)
+00001138                           279      
+00001138                           280     
+00001138                           281      
+00001138  7C00                     282      move.l  #0, d6                            ** initializes the player sprite counter 
+0000113A  7E09                     283      move.l  #FRAMES_SKIP_TO_DRAW, d7          ** initialize the counter for how many frames it has been since an object has been spawned 
+0000113C                           284      
+0000113C                           285  
+0000113C                           286  ** game loop: calls all functions needed in one game cycle, keeps running until the player loses or wins 
+0000113C                           287  ** the player loses by coliding with an object, and wins by reaching a score of 99.
+0000113C                           288  gameLoop:
+0000113C                           289      
+0000113C                           290      ** checks if the player is jumping, if he is then dont get keyboard input, if he isnt then get keyboard input 
+0000113C  202F 0044                291      move.l  (IS_JUMPING - REGISTERS_OFFSET)(sp), d0
+00001140  0C80 00000001            292      cmpi.l  #1, d0 
+00001146  6700 0008                293      beq     ignoreKeyboardInput
+0000114A  4EB9 007299FA            294      jsr     getKeyboardInput
+00001150                           295  ignoreKeyboardInput:
+00001150                           296     
+00001150  4EB9 00729894            297      jsr     putPlayerSpriteInRegisters
+00001156  4EB9 00729A46            298      jsr     updatePlayerSprite
+0000115C                           299      
+0000115C  4EB9 007298B2            300      jsr     putPlayerCropLocationInRegisters   
+00001162  4EB9 00729B02            301      jsr     drawBackground 
+00001168                           302      
+00001168  4EB9 00729894            303      jsr     putPlayerSpriteInRegisters
+0000116E  4EB9 00729BAE            304      jsr     drawPlayerSprite
+00001174                           305      
+00001174  4EB9 00729CAC            306      jsr     getRandomValue
+0000117A  4EB9 00729990            307      jsr     getObsticleSprite
+00001180  4EB9 0072995E            308      jsr     updateObsticle
+00001186                           309  
+00001186                           310      ** if no object exists skip past drawing the obsticle 
+00001186  202F 007C                311      move.l  (OBJECT_1_X_CROP - REGISTERS_OFFSET)(sp),d0 
+0000118A  0C80 FFFFFFFF            312      cmpi.l  #$FFFFFFFF, d0 
+00001190  6700 0032                313      beq     continue
+00001194  4EB9 00729912            314      jsr     putObsticle1LocationInRegisters
+0000119A  4EB9 00729B02            315      jsr     drawBackground
+000011A0                           316      ** check if the object needs to be destroyed 
+000011A0  202F 0098                317      move.l  (DESTROY_OBJECT_BOOL - REGISTERS_OFFSET)(sp), d0
+000011A4  0C80 00000001            318      cmpi.l  #1, d0
+000011AA  6600 000C                319      bne     drawObsticle1       ** if bool is not set, dont destroy, if it is destroy 
+000011AE  4EB9 00729780            320      jsr     destroyObsticle
+000011B4  6700 000E                321      beq     continue
+000011B8                           322  drawObsticle1:
+000011B8  4EB9 007298D2            323      jsr     putObsticle1InRegisters
+000011BE  4EB9 007297BC            324      jsr     drawObsticleSprite
+000011C4                           325   
+000011C4                           326      
+000011C4                           327  continue: 
+000011C4  4EB9 007296EC            328      jsr     addScore
+000011CA                           329      
+000011CA  4EB9 007295E2            330      jsr     clearSevenSegment
+000011D0  4EB9 0072960A            331      jsr     sevenSegment
+000011D6                           332      
+000011D6  4EB9 00001276            333      jsr     swapBuffers
+000011DC  4EB9 00729724            334      jsr     checkCollisions
+000011E2                           335      
+000011E2  5287                     336      addi.l  #1, d7                          ** increment the frame since last drawn new object counter 
+000011E4  202F 009C                337      move.l  (SCORE - REGISTERS_OFFSET)(sp), d0 
+000011E8  0C80 00000063            338      cmpi.l  #99, d0 
+000011EE  6600 FF4C                339      bne     gameLoop                        ** stay in game loop until he dies (in collision script) or until score reaches 99 
+000011F2                           340      
+000011F2                           341  endGame:
+000011F2  4EB9 00729780            342      jsr     destroyObsticle
+000011F8  103C 000B                343      move.b  #CLEAR_SCREEN_COMMAND,d0
+000011FC  223C 0000FF00            344      move.l  #CLEAR_SCREEN_MAGIC_VAL,d1
+00001202  4E4F                     345      trap    #15  
+00001204  103C 005E                346      move.b  #REPAINT_SCREEN_TRAP_CODE, d0 
+00001208  4E4F                     347      trap    #15 
+0000120A                           348     
+0000120A                           349      ** paramaters for loading in the loading screen 
+0000120A  7001                     350      move.l  #1, d0
+0000120C  7201                     351      move.l  #1, d1
+0000120E  243C 0000010B            352      move.l  #267, d2
+00001214  766E                     353      move.l  #110, d3
+00001216  283C 000000CF            354      move.l  #207, d4
+0000121C  2A3C 000000B9            355      move.l  #185, d5
+00001222  41F9 0038819E            356      lea     loading, a0 
+00001228  4EB9 00729B02            357      jsr     drawBackground 
+0000122E  4EB9 00001276            358      jsr     swapBuffers 
+00001234                           359      
+00001234                           360      ** paramaters for either the win screen or the lose screen 
+00001234  7000                     361      move.l  #0, d0
+00001236  7200                     362      move.l  #0, d1
+00001238  243C 00000280            363      move.l  #DISPLAY_WINDOW_WIDTH, d2
+0000123E  263C 000001E0            364      move.l  #DISPLAY_WINDOW_HEIGHT, d3
+00001244  7800                     365      move.l  #0, d4
+00001246  7A00                     366      move.l  #0, d5
+00001248                           367      
+00001248                           368      *checks the score, if they have a score of 99 they win, else they lose. Then loads appropriate screen 
+00001248  2C2F 009C                369      move.l  (SCORE - REGISTERS_OFFSET)(sp), d6 
+0000124C  0C86 00000063            370      cmpi.l  #99, d6 
+00001252  6700 000C                371      beq     loadWin
+00001256                           372      
+00001256                           373  loadLose:
+00001256  41F9 003A52E8            374      lea     loseScreen, a0 
+0000125C  6000 0008                375      bra     drawEndScreen  
+00001260                           376  loadWin:
+00001260  41F9 004D1362            377      lea     winScreen, a0 
+00001266                           378       
+00001266                           379  drawEndScreen
+00001266  4EB9 00729B02            380      jsr     drawBackground 
+0000126C  4EB9 00001276            381      jsr     swapBuffers 
+00001272  6000 FE2E                382      bra     loadGame
+00001276                           383  
+00001276                           384      
+00001276                           385  ** swaps the buffers 
+00001276                           386  swapBuffers
+00001276  48E7 FFFE                387      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+0000127A                           388  
+0000127A  103C 005E                389      move.b  #REPAINT_SCREEN_TRAP_CODE,d0
+0000127E  4E4F                     390      TRAP    #15
+00001280                           391      
+00001280  4CDF 7FFF                392      movem.l (sp)+, ALL_REG
+00001284  4E75                     393      rts  
+00001286                           394       
+00001286                           395  
+00001286                           396  
+00001286                           397      
+00001286                           398  
+00001286                           399  stop: 
+00001286  1038 0009                400      move.b  $9,d0            *halts similation
+0000128A  4E4F                     401      trap #15
+0000128C                           402          
+0000128C  4E72 2000                403      STOP #$2000
+00001290                           404             
+00001290                           405  
+00001290  FFFF FFFF                406      SIMHALT             
+00001294                           407  * bitmap files 
+00001294                           408  background  INCBIN      "Background.png (1).bmp"
+0012D2CA                           409  bitmap32    INCBIN      "testCharacter32.bmp"
+0036FB54                           410  obsticles   INCBIN      "Obsticles.bmp"
+0038819E                           411  
+0038819E                           412  loading     INCBIN      "Loading.bmp"
+003A52E8                           413  loseScreen  INCBIN      "LoseState.bmp"
+004D1362                           414  winScreen   INCBIN      "WinState.bmp"
+005FD3DC                           415  startScreen INCBIN      "StartScreen.bmp"
+00729456                           416  
+00729456                           417  * location of the obsticles 
+00729456= 000000BC 000000C0 ...    418  obsticleLocation    dc.l    OBJECT_1_X_CROP, OBJECT_1_Y_CROP, OBJECT_1_WIDTH, OBJECT_1_HEIGHT, OBJECT_1_X_DISPLAY, OBJECT_1_Y_DISPLAY
+0072946E= 000000A4 000000A8 ...    419                      dc.l    OBJECT_2_X_CROP, OBJECT_2_Y_CROP, OBJECT_2_WIDTH, OBJECT_2_HEIGHT, OBJECT_2_X_DISPLAY, OBJECT_2_Y_DISPLAY
+00729486= 0000008C 00000090 ...    420                      dc.l    OBJECT_3_X_CROP, OBJECT_3_Y_CROP, OBJECT_3_WIDTH, OBJECT_3_HEIGHT, OBJECT_3_X_DISPLAY, OBJECT_3_Y_DISPLAY
+0072949E                           421  
+0072949E                           422  ** crop and draw locations for each of the 4 obsticle sprites 
+0072949E= 00000000 00000001 ...    423  obsticleSprites     dc.l    0, 1, 41, 42, 599, 440
+007294B6= 0000002A 00000001 ...    424                      dc.l    42, 1, 35, 57, 605, 424
+007294CE= 00000052 00000001 ...    425                      dc.l    82, 1, 63, 63, 577, 418
+007294E6= 00000000 0000004F ...    426                      dc.l    0, 79, 43, 60, 597, 421
+007294FE                           427                      
+007294FE                           428                             ;0ABCDEFG        ;NUMBER
+007294FE= 7E                       429  bitmaskTable        dc.b    %01111110        ;0
+007294FF= 30                       430                      dc.b    %00110000        ;1
+00729500= 6D                       431                      dc.b    %01101101        ;2
+00729501= 79                       432                      dc.b    %01111001        ;3
+00729502= 33                       433                      dc.b    %00110011        ;4
+00729503= 5B                       434                      dc.b    %01011011        ;5
+00729504= 5F                       435                      dc.b    %01011111        ;6
+00729505= 70                       436                      dc.b    %01110000        ;7
+00729506= 7F                       437                      dc.b    %01111111        ;8
+00729507= 73                       438                      dc.b    %01110011        ;9
+00729508                           439                      
+00729508                           440  ; length of 10               x1, y1;  x2, y2     ;LETTER
+00729508= 026C 001E 0276 001E      441  drawLocations1s     dc.w    620, 30, 630, 30    ;G 
+00729510= 026C 001E 026C 0014      442                      dc.w    620, 30, 620, 20    ;F 
+00729518= 026C 0028 026C 001E      443                      dc.w    620, 40, 620, 30    ;E 
+00729520= 0276 0028 026C 0028      444                      dc.w    630, 40, 620, 40    ;D
+00729528= 0276 001E 0276 0028      445                      dc.w    630, 30, 630, 40    ;C
+00729530= 0276 0014 0276 001E      446                      dc.w    630, 20, 630, 30    ;B
+00729538= 026C 0014 0276 0014      447                      dc.w    620, 20, 630, 20    ;A
+00729540                           448                                                                   
+00729540                           449  ; length of 10               x1, y1;  x2, y2     ;LETTER
+00729540= 0258 001E 0262 001E      450  drawLocations10s    dc.w    600, 30, 610, 30    ;G 
+00729548= 0258 001E 0258 0014      451                      dc.w    600, 30, 600, 20    ;F 
+00729550= 0258 0028 0258 001E      452                      dc.w    600, 40, 600, 30    ;E
+00729558= 0262 0028 0258 0028      453                      dc.w    610, 40, 600, 40    ;D 
+00729560= 0262 001E 0262 0028      454                      dc.w    610, 30, 610, 40    ;C
+00729568= 0262 0014 0262 001E      455                      dc.w    610, 20, 610, 30    ;B
+00729570= 0258 0014 0262 0014      456                      dc.w    600, 20, 610, 20    ;A
+00729578                           457     
+00729578                           458                               ;left x, upper y, right x, lower y                  
+00729578= 0256 0012 0278 002A      459  sevenSegmentLocation    dc.w    598, 18, 632, 42  
+00729580                           460  
+00729580= 46 4F 58 20 4A 55 ...    461  GameTitle           dc.b    'FOX JUMPER',CR,LF,0    
+0072958E= 436C6963 6B20616E ...    462  gameStartCommand    dc.l    'Click anywhere on the screen to start...',CR,LF,0
+007295C2= 50726573 73207370 ...    463  howToPlay           dc.l    'Press space to jump',CR,LF,0
+007295E2                           464                     
+007295E2                           465  ** all includes 
+007295E2                           466  include15   INCLUDE     "clearSevenSegment.X68"
+007295E2                           467  
+007295E2                           468  clearSevenSegment: 
+007295E2  48E7 FFFE                469      movem.l ALL_REG, -(sp)
+007295E6                           470      
+007295E6  47F9 00729578            471      lea     sevenSegmentLocation, a3            *loads the array of paramaters for the draw rectangle function 
+007295EC                           472      
+007295EC  7200                     473      move.l  #OBSTICLE_BACKGROUND_COLOR, d1 
+007295EE  7050                     474      move.l  #PEN_COLOR_TRAP_CODE, d0
+007295F0  4E4F                     475      trap    #15 
+007295F2  7200                     476      move.l  #OBSTICLE_BACKGROUND_COLOR, d1 
+007295F4  7051                     477      move.l  #FILL_COLOR_TRAP__CODE, d0
+007295F6  4E4F                     478      trap    #15 
+007295F8                           479      
+007295F8  321B                     480      move.w  (a3)+, d1                           ** places coordinates into appropriate registers 
+007295FA  341B                     481      move.w  (a3)+, d2 
+007295FC  361B                     482      move.w  (a3)+, d3 
+007295FE  381B                     483      move.w  (a3)+, d4 
+00729600                           484      
+00729600  7057                     485      move.l  #DRAW_RECTANGLE_COMMAND, d0 
+00729602  4E4F                     486      trap    #15
+00729604                           487      
+00729604  4CDF 7FFF                488      movem.l (sp)+, ALL_REG
+00729608  4E75                     489      rts   
+0072960A                           490  
+0072960A                           491  -------------------- end include --------------------
+0072960A                           492  include14   INCLUDE     "sevenSegment.X68"                   
+0072960A                           493  sevenSegment:
+0072960A  48E7 FFFE                494      movem.l ALL_REG, -(sp)
+0072960E                           495      
+0072960E  41F9 007294FE            496      lea     bitmaskTable, a0  
+00729614  45F9 00729540            497      lea     drawLocations10s, a2 
+0072961A                           498     
+0072961A  202F 00DC                499      move.l  SCORE(sp),d0 
+0072961E  2200                     500      move.l  d0, d1 
+00729620  82FC 000A                501      divu    #10, d1 
+00729624  3401                     502      move.w  d1, d2          ;; 10's digit 
+00729626  4841                     503      swap.w  d1
+00729628  3601                     504      move.w  d1, d3          ;; remainder or 1's digit  
+0072962A                           505  offsetTo1Digit:
+0072962A  D1C3                     506      add.l   d3, a0 
+0072962C  1810                     507      move.b  (a0),d4                ;; moves the mask of the 1's value 
+0072962E  7E00                     508      move.l  #0, d7                  ;; loop counter 
+00729630                           509  loop1sDigit:
+00729630  1004                     510      move.b  d4, d0 
+00729632  0200 0001                511      andi.b  #1, d0
+00729636  6700 0008                512      beq     skip1sDraw              ;; checks if the bit is set, if it is then draw the segment,
+0072963A  4EB9 0072967C            513      jsr     draw1s7Segment          ;; if not increment the counter and shift 
+00729640                           514  skip1sDraw: 
+00729640  E20C                     515      lsr.b   #1, d4                  ;; shifts the bit over by 1 to get the next bitmask segment
+00729642  5287                     516      add.l   #1, d7 
+00729644  0C87 00000007            517      cmpi.l  #7, d7
+0072964A  6DE4                     518      blt     loop1sDigit             ;; branch out if reached max bit checks (7 because A-G) 
+0072964C                           519  offsetTo10sDigit:
+0072964C  41F9 007294FE            520      lea     bitmaskTable, a0 
+00729652  D1C2                     521      add.l   d2, a0
+00729654  4284                     522      clr.l   d4
+00729656  1810                     523      move.b  (a0),d4
+00729658  7E00                     524      move.l  #0, d7
+0072965A                           525  loop10sDigit: 
+0072965A  1004                     526      move.b  d4, d0 
+0072965C  0200 0001                527      andi.b  #1, d0
+00729660  6700 0008                528      beq     skip10sDraw             ;; checks if the bit is set, if it is then draw the segment,
+00729664  4EB9 007296B4            529      jsr     draw10s7Segment         ;; if not increment the counter and shift 
+0072966A                           530  skip10sDraw: 
+0072966A  E20C                     531      lsr.b   #1, d4                  ;; shifts the bit over by 1 to get the next bitmask segment
+0072966C  5287                     532      add.l   #1, d7 
+0072966E  0C87 00000007            533      cmpi.l  #7, d7
+00729674  6DE4                     534      blt     loop10sDigit            ;; branch out if reached max bit checks (7 because A-G) 
+00729676                           535  
+00729676  4CDF 7FFF                536      movem.l (sp)+, ALL_REG
+0072967A  4E75                     537      rts   
+0072967C                           538  draw1s7Segment:
+0072967C  48E7 FFFE                539      movem.l ALL_REG, -(sp)
+00729680  43F9 00729508            540      lea     drawLocations1s, a1 
+00729686  2C07                     541      move.l  d7, d6 
+00729688  CCFC 0008                542      mulu    #8, d6
+0072968C  D3C6                     543      add.l   d6, a1
+0072968E                           544      
+0072968E  223C 00FFFFFF            545      move.l  #WHITE, d1 
+00729694  7050                     546      move.l  #PEN_COLOR_TRAP_CODE, d0
+00729696  4E4F                     547      trap    #15
+00729698  123C 0002                548      move.b  #PEN_WIDTH, d1
+0072969C  103C 005D                549      move.b  #PEN_WIDTH_TRAP_CODE, d0 
+007296A0  4E4F                     550      trap    #15 
+007296A2  3219                     551      move.w  (a1)+, d1 
+007296A4  3419                     552      move.w  (a1)+, d2 
+007296A6  3619                     553      move.w  (a1)+, d3 
+007296A8  3811                     554      move.w  (a1),d4
+007296AA  7054                     555      move.l  #DRAW_LINE_TRAP_CODE, d0 
+007296AC  4E4F                     556      trap    #15 
+007296AE                           557      
+007296AE  4CDF 7FFF                558      movem.l (sp)+, ALL_REG
+007296B2  4E75                     559      rts  
+007296B4                           560  
+007296B4                           561  draw10s7Segment:
+007296B4  48E7 FFFE                562      movem.l ALL_REG, -(sp)
+007296B8  43F9 00729540            563      lea     drawLocations10s, a1 
+007296BE  2C07                     564      move.l  d7, d6 
+007296C0  CCFC 0008                565      mulu    #8, d6
+007296C4  D3C6                     566      add.l   d6, a1
+007296C6                           567      
+007296C6  223C 00FFFFFF            568      move.l  #WHITE, d1 
+007296CC  7050                     569      move.l  #PEN_COLOR_TRAP_CODE, d0
+007296CE  4E4F                     570      trap    #15
+007296D0  123C 0002                571      move.b  #PEN_WIDTH, d1
+007296D4  103C 005D                572      move.b  #PEN_WIDTH_TRAP_CODE, d0 
+007296D8  4E4F                     573      trap    #15 
+007296DA  3219                     574      move.w  (a1)+, d1 
+007296DC  3419                     575      move.w  (a1)+, d2 
+007296DE  3619                     576      move.w  (a1)+, d3 
+007296E0  3811                     577      move.w  (a1),d4
+007296E2  7054                     578      move.l  #DRAW_LINE_TRAP_CODE, d0 
+007296E4  4E4F                     579      trap    #15 
+007296E6                           580      
+007296E6  4CDF 7FFF                581      movem.l (sp)+, ALL_REG
+007296EA  4E75                     582      rts  
+007296EC                           583  
+007296EC                           584  
+007296EC                           585  
+007296EC                           586  
+007296EC                           587  
+007296EC                           588  -------------------- end include --------------------
+007296EC                           589  include13   INCLUDE     "AddScore.X68"
+007296EC                           590  addScore: 
+007296EC  48E7 FFFE                591      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+007296F0                           592  
+007296F0                           593      
+007296F0  202F 0054                594      move.l  PLAYER_X_DISPLAY(sp), d0 
+007296F4  222F 00CC                595      move.l  OBJECT_1_X_DISPLAY(sp), d1 
+007296F8  B280                     596      cmp.l   d0, d1 
+007296FA  6E00 0022                597      bgt     returnAddScore
+007296FE  202F 00E0                598      move.l  SCORE_ADDED_BOOL(sp), d0 
+00729702  0C80 00000001            599      cmpi.l  #1, d0
+00729708  6700 0014                600      beq     returnAddScore
+0072970C                           601   
+0072970C  2F7C 00000001 00E0       602      move.l  #1, SCORE_ADDED_BOOL(sp)    
+00729714  202F 00DC                603      move.l  SCORE(sp), d0 
+00729718  5280                     604      addi.l  #1, d0 
+0072971A  2F40 00DC                605      move.l  d0, SCORE(sp)
+0072971E                           606      
+0072971E                           607  returnAddScore:  
+0072971E  4CDF 7FFF                608      movem.l (sp)+, ALL_REG
+00729722  4E75                     609      rts                                        ** return, and reset the stack  
+00729724                           610  
+00729724                           611  
+00729724                           612  -------------------- end include --------------------
+00729724                           613  include12   INCLUDE     "Collision.X68"
+00729724                           614  
+00729724                           615  checkCollisions:
+00729724  48E7 FFFE                616      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00729728                           617  
+00729728  202F 0054                618      move.l  PLAYER_X_DISPLAY(sp), d0 
+0072972C  222F 00CC                619      move.l  OBJECT_1_X_DISPLAY(sp), d1
+00729730  242F 00C4                620      move.l  OBJECT_1_WIDTH(sp), d2 
+00729734  0482 00000023            621      subi.l  #OBJECT_VELOCITY, d2
+0072973A  D282                     622      add.l   d2, d1
+0072973C  B280                     623      cmp.l   d0, d1 
+0072973E  6D00 003A                624      blt     notColliding 
+00729742  242F 004C                625      move.l  PLAYER_WIDTH(sp), d2 
+00729746  D082                     626      add.l   d2, d0 
+00729748  222F 00CC                627      move.l  OBJECT_1_X_DISPLAY(sp), d1 
+0072974C  B280                     628      cmp.l   d0, d1 
+0072974E  6E00 002A                629      bgt     notColliding 
+00729752  202F 0058                630      move.l  PLAYER_Y_DISPLAY(sp), d0 
+00729756  222F 00D0                631      move.l  OBJECT_1_Y_DISPLAY(sp), d1
+0072975A  242F 0050                632      move.l  PLAYER_HEIGHT(sp), d2
+0072975E  D082                     633      add.l   d2, d0 
+00729760  B280                     634      cmp.l   d0, d1 
+00729762  6E00 0016                635      bgt     notColliding
+00729766  202F 0058                636      move.l  PLAYER_Y_DISPLAY(sp), d0 
+0072976A  242F 00C8                637      move.l  OBJECT_1_HEIGHT(sp), d2 
+0072976E  D282                     638      add.l   d2, d1 
+00729770  B280                     639      cmp.l   d0, d1 
+00729772  6D00 0006                640      blt     notColliding 
+00729776                           641  colliding:
+00729776  4EB8 11F2                642      jsr     endGame
+0072977A                           643  
+0072977A                           644  notColliding:
+0072977A  4CDF 7FFF                645      movem.l (sp)+, ALL_REG
+0072977E  4E75                     646      rts                                        ** return, and reset the stack  
+00729780                           647  
+00729780                           648  
+00729780                           649  
+00729780                           650  -------------------- end include --------------------
+00729780                           651  include11   INCLUDE     "Destroy.X68"
+00729780                           652  destroyObsticle:
+00729780  48E7 FFFE                653      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack
+00729784                           654      
+00729784  2F7C 00000000 00E0       655      move.l  #0, SCORE_ADDED_BOOL(sp)            ** resets the score added bool 
+0072978C                           656      
+0072978C  226F 0030                657      move.l  A4_OFFSET(sp),a1 
+00729790                           658      
+00729790  2F7C 00000000 00D8       659      move.l  #0, DESTROY_OBJECT_BOOL(sp)         ** resets the object destroyed bool 
+00729798                           660      
+00729798  2F7C 00000000 001C       661      move.l  #0, D7_OFFSET(sp)
+007297A0  7006                     662      move.l  #DRAW_PARAMETERS, d0                ** moves the draw paramaters (number of paramaters for drawing the bitmap sprite, 6, into d0 as a counter)
+007297A2                           663  
+007297A2                           664  obsticleLoop:
+007297A2  2A19                     665      move.l  (a1)+, d5
+007297A4                           666      
+007297A4  2FBC FFFFFFFF 5000       667      move.l  #$FFFFFFFF,(sp,d5)
+007297AC  5380                     668      subi.l  #1, d0 
+007297AE  0C80 00000000            669      cmpi.l  #0, d0
+007297B4  66EC                     670      bne     obsticleLoop 
+007297B6                           671  
+007297B6  4CDF 7FFF                672      movem.l (sp)+, ALL_REG  ** return, and reset the stack 
+007297BA  4E75                     673      rts             
+007297BC                           674  
+007297BC                           675  
+007297BC                           676  -------------------- end include --------------------
+007297BC                           677  include10   INCLUDE     "DrawObsticles.X68"
+007297BC                           678  drawObsticleSprite: 
+007297BC  48E7 FFFE                679      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+007297C0                           680     
+007297C0  2F6F 0010 FFFC           681      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)    ** moves the starting width into the stack (bottom left) 
+007297C6  202F 0014                682      move.l  D5_OFFSET(sp),d0 
+007297CA  D0AF 000C                683      add.l   D3_OFFSET(sp),d0
+007297CE  2F40 FFF8                684      move.l  d0, -CUR_DISPLAY_Y(sp)              ** moves the starting height into the stack (bottom left)
+007297D2  2F6F 000C FFF4           685      move.l  D3_OFFSET(sp),-LOOP_COUNTER(sp)     ** initialize the loop counter to be the height of the crop 
+007297D8                           686    
+007297D8  2628 0012                687      move.l  OFFSET_TO_IMAGE_WIDTH(a0),d3        ** 18 is the offset in the header file for the width of the image 
+007297DC  E15B                     688      rol.w   #8, d3                              ** Little Endian swap
+007297DE  4843                     689      swap.w  d3 
+007297E0  E15B                     690      rol.w   #8, d3      
+007297E2                           691  
+007297E2  2828 0016                692      move.l  OFFSET_TO_IMAGE_HEIGHT(a0),d4       ** 22 is the offset in the header file for the height of the image 
+007297E6  E15C                     693      rol.w   #8, d4                              ** Little Endian Swap
+007297E8  4844                     694      swap.w  d4 
+007297EA  E15C                     695      rol.w   #8, d4      
+007297EC                           696       
+007297EC  2A28 000A                697      move.l  OFFSET_TO_IMAGE_OFFSET(a0),d5       ** 10 is the offset to the header location that stores the offset to the start of the pixel data from the start of the header
+007297F0  E15D                     698      rol.w   #8, d5                              ** Little Endian Swap
+007297F2  4845                     699      swap.w  d5
+007297F4  E15D                     700      rol.w   #8, d5
+007297F6  DA88                     701      add.l   a0, d5
+007297F8  2445                     702      move.l  d5, a2                              **a2 is a pointer to the start of the pixel data (bottom left corner)
+007297FA                           703         
+007297FA                           704      
+007297FA  2C03                     705      move.l  d3, d6               
+007297FC  2E04                     706      move.l  d4, d7               
+007297FE  7A00                     707      move.l  #0, d5               
+00729800                           708  getObsticleInitialOffset: 
+00729800  DAAF 0004                709      add.l   D1_OFFSET(sp),d5 
+00729804  DAAF 000C                710      add.l   D3_OFFSET(sp),d5 
+00729808  9E85                     711      sub.l   d5, d7
+0072980A  CEC3                     712      mulu    d3, d7 
+0072980C  DEAF 0000                713      add.l   D0_OFFSET(sp),d7
+00729810  E58F                     714      lsl.l   #2, d7                             ** multiply by 4 by shifting it to the left by 4 bits 
+00729812  D5C7                     715      adda.l  d7, a2                             ** adds the offset to the pointer
+00729814  6000 0022                716      bra     drawObsticleRow
+00729818                           717  
+00729818                           718  incrementObsticleRow:
+00729818  222F FFFC                719      move.l  -CUR_DISPLAY_X(sp),d1 
+0072981C                           720      
+0072981C  5281                     721      addi.l  #1, d1                             ** increment the width 
+0072981E  2A2F 0008                722      move.l  D2_OFFSET(sp),d5
+00729822  DAAF 0010                723      add.l   D4_OFFSET(sp),d5
+00729826  2F41 FFFC                724      move.l  d1, -CUR_DISPLAY_X(sp)
+0072982A  BA81                     725      cmp.l   d1, d5                             ** compare it to the width of the crop 
+0072982C  6E00 000A                726      bgt     drawObsticleRow                            ** keep drawing until cur_width = crop_width
+00729830  242F FFF8                727      move.l  -CUR_DISPLAY_Y(sp),d2
+00729834  6000 0030                728      bra     incrementObsticleHeight
+00729838                           729  drawObsticleRow: 
+00729838  221A                     730      move.l  (a2)+, d1                          ** move the first byte into memory 
+0072983A  E089                     731      lsr.l   #8, d1                             ** shift to trash the alpha (00 BB GG RR format) 
+0072983C  B2BC 00000000            732      cmp.l   #OBSTICLE_BACKGROUND_COLOR, d1
+00729842  67D4                     733      beq     incrementObsticleRow                       ** go to increment row to ignore the background color 
+00729844  7050                     734      move.l  #PEN_COLOR_TRAP_CODE,d0            ** make that pen color 
+00729846  4E4F                     735      trap    #15
+00729848                           736      
+00729848  222F FFFC                737      move.l  -CUR_DISPLAY_X(sp),d1              ** get the current width and height (of the display), draw at that location
+0072984C  242F FFF8                738      move.l  -CUR_DISPLAY_Y(sp),d2
+00729850  7052                     739      move.l  #DRAW_PIXEL_TRAP_CODE, d0
+00729852  4E4F                     740      trap    #15
+00729854                           741      
+00729854  5281                     742      addi.l  #1, d1                             ** increment the width 
+00729856  2A2F 0008                743      move.l  D2_OFFSET(sp),d5
+0072985A  DAAF 0010                744      add.l   D4_OFFSET(sp),d5
+0072985E  2F41 FFFC                745      move.l  d1, -CUR_DISPLAY_X(sp)
+00729862  BA81                     746      cmp.l   d1, d5                             ** compare it to the width of the crop 
+00729864  6ED2                     747      bgt     drawObsticleRow                            ** keep drawing until cur_width = crop_width
+00729866                           748  incrementObsticleHeight:   
+00729866  2F6F 0010 FFFC           749      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)
+0072986C  5382                     750      subi.l  #1, d2                             ** decrement the height 
+0072986E  2F42 FFF8                751      move.l  d2, -CUR_DISPLAY_Y(sp)
+00729872                           752  
+00729872                           753  skipObsticleBytes:
+00729872  2A06                     754      move.l  d6, d5
+00729874  9AAF 0008                755      sub.l   D2_OFFSET(sp),d5
+00729878  E58D                     756      lsl.l   #2, d5 
+0072987A  D5C5                     757      adda.l  d5, a2                             ** adds the offset as calculated above in skipBytes description to the pixel data pointer
+0072987C  222F FFF4                758      move.l  -LOOP_COUNTER(sp),d1
+00729880  5381                     759      subi.l  #1, d1 
+00729882  2F41 FFF4                760      move.l  d1, -LOOP_COUNTER(sp)
+00729886  B2BC 00000000            761      cmp.l   #0, d1
+0072988C  6CAA                     762      bge     drawObsticleRow                            ** branch to drawRow as long as the loop counter doesnt reach 0 
+0072988E                           763  
+0072988E                           764  returnDrawObsticleSprite:
+0072988E  4CDF 7FFF                765      movem.l (sp)+, ALL_REG
+00729892  4E75                     766      rts                                        ** return, and reset the stack  
+00729894                           767      
+00729894                           768  
+00729894                           769  -------------------- end include --------------------
+00729894                           770  include7    INCLUDE     "PutInRegisters.X68"  
+00729894                           771  putPlayerSpriteInRegisters: 
+00729894                           772                          
+00729894  202F 0020                773      move.l  (PLAYER_SPRITE_X_CROP - REGISTERS_OFFSET_2)(sp),d0                            ** load the crop location of the sprite sheet 
+00729898  222F 0024                774      move.l  (PLAYER_SPRITE_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+0072989C  242F 0028                775      move.l  (PLAYER_SPRITE_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+007298A0  262F 002C                776      move.l  (PLAYER_SPRITE_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+007298A4  282F 0030                777      move.l  (PLAYER_SPRITE_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+007298A8  2A2F 0034                778      move.l  (PLAYER_SPRITE_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+007298AC  206F 0038                779      move.l  (PLAYER_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp),a0
+007298B0  4E75                     780      rts
+007298B2                           781   
+007298B2                           782  putPlayerCropLocationInRegisters:
+007298B2  202F 0008                783      move.l  (PLAYER_X_CROP - REGISTERS_OFFSET_2)(sp),d0
+007298B6  222F 000C                784      move.l  (PLAYER_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+007298BA  242F 0010                785      move.l  (PLAYER_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+007298BE  262F 0014                786      move.l  (PLAYER_HEIGHT - REGISTERS_OFFSET_2)(sp),d3 
+007298C2  282F 0018                787      move.l  (PLAYER_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+007298C6  2A2F 001C                788      move.l  (PLAYER_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+007298CA  24AF 003C                789      move.l  (BACKGROUND_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp),(a2)
+007298CE  2052                     790      move.l  (a2),a0  
+007298D0  4E75                     791      rts
+007298D2                           792      
+007298D2                           793  putObsticle1InRegisters: 
+007298D2  202F 0080                794      move.l  (OBJECT_1_X_CROP - REGISTERS_OFFSET_2)(sp),d0
+007298D6  222F 0084                795      move.l  (OBJECT_1_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+007298DA  242F 0088                796      move.l  (OBJECT_1_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+007298DE  262F 008C                797      move.l  (OBJECT_1_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+007298E2  282F 0090                798      move.l  (OBJECT_1_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+007298E6  2A2F 0094                799      move.l  (OBJECT_1_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+007298EA  24AF 0098                800      move.l  (OBSTICLES_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp), (a2)
+007298EE  2052                     801      move.l  (a2),a0  
+007298F0  4E75                     802      rts
+007298F2                           803      
+007298F2                           804  putObsticle2InRegisters: 
+007298F2  202F 0068                805      move.l  (OBJECT_2_X_CROP - REGISTERS_OFFSET_2)(sp),d0
+007298F6  222F 006C                806      move.l  (OBJECT_2_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+007298FA  242F 0070                807      move.l  (OBJECT_2_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+007298FE  262F 0074                808      move.l  (OBJECT_2_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+00729902  282F 0078                809      move.l  (OBJECT_2_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+00729906  2A2F 007C                810      move.l  (OBJECT_2_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+0072990A  24AF 0098                811      move.l  (OBSTICLES_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp), (a2)
+0072990E  2052                     812      move.l  (a2),a0
+00729910  4E75                     813      rts
+00729912                           814  putObsticle1LocationInRegisters:
+00729912  202F 0090                815      move.l  (OBJECT_1_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d0
+00729916  222F 0094                816      move.l  (OBJECT_1_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d1
+0072991A  242F 0088                817      move.l  (OBJECT_1_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+0072991E  0682 00000023            818      addi.l  #OBJECT_VELOCITY, d2                                    ** adds the objects velocity to be sure to redraw all locations the object has covered 
+00729924  262F 008C                819      move.l  (OBJECT_1_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+00729928  282F 0090                820      move.l  (OBJECT_1_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+0072992C  2A2F 0094                821      move.l  (OBJECT_1_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+00729930  24AF 003C                822      move.l  (BACKGROUND_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp),(a2)
+00729934  2052                     823      move.l  (a2),a0  
+00729936  4E75                     824      rts
+00729938                           825  putObsticle2LocationInRegisters:
+00729938  202F 0078                826      move.l  (OBJECT_2_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d0
+0072993C  222F 007C                827      move.l  (OBJECT_2_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d1
+00729940  242F 0070                828      move.l  (OBJECT_2_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+00729944  0682 00000023            829      addi.l  #OBJECT_VELOCITY, d2                                    ** adds the objects velocity to be sure to redraw all locations the object has covered 
+0072994A  262F 0074                830      move.l  (OBJECT_2_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+0072994E  282F 0078                831      move.l  (OBJECT_2_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+00729952  2A2F 007C                832      move.l  (OBJECT_2_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+00729956  24AF 003C                833      move.l  (BACKGROUND_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp),(a2)
+0072995A  2052                     834      move.l  (a2),a0  
+0072995C  4E75                     835      rts 
+0072995E                           836  
+0072995E                           837  -------------------- end include --------------------
+0072995E                           838  include9    INCLUDE     "UpdateObsticle.X68"
+0072995E                           839  updateObsticle: 
+0072995E  48E7 FFFE                840      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack
+00729962                           841      
+00729962                           842     
+00729962                           843  obsticle1:
+00729962  202F 00CC                844      move.l  OBJECT_1_X_DISPLAY(sp), d0 
+00729966  0C80 FFFFFFFF            845      cmpi.l  #$FFFFFFFF, d0 
+0072996C  6700 001C                846      beq     returnUpdateObsticle                ** checks to see if an object actually exists 
+00729970                           847      
+00729970  0480 00000023            848      subi.l  #OBJECT_VELOCITY, d0
+00729976  2F40 00CC                849      move.l  d0, OBJECT_1_X_DISPLAY(sp)          ** adds the velocity to the current position 
+0072997A                           850      
+0072997A  7423                     851      move.l  #OBJECT_VELOCITY, d2
+0072997C  B082                     852      cmp.l   d2, d0
+0072997E  6E00 000A                853      bgt     returnUpdateObsticle                ** checks to see if the object will go off screen, if it doesnt return, if it does then set the object to be destroyed 
+00729982                           854      
+00729982  2F7C 00000001 00D8       855      move.l  #1, DESTROY_OBJECT_BOOL(sp)
+0072998A                           856      
+0072998A                           857  returnUpdateObsticle: 
+0072998A  4CDF 7FFF                858      movem.l (sp)+, ALL_REG
+0072998E  4E75                     859      rts                                        ** return, and reset the stack 
+00729990                           860  
+00729990                           861  -------------------- end include --------------------
+00729990                           862  include8    INCLUDE     "GetObsticle.X68"                 
+00729990                           863      
+00729990                           864  getObsticleSprite:
+00729990  48E7 FFFE                865      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00729994                           866      
+00729994  202F 001C                867      move.l  D7_OFFSET(sp),d0                    ** checks to see if its been the appropriate amount of frames since last object spawned 
+00729998  0C80 00000009            868      cmpi.l  #FRAMES_SKIP_TO_DRAW,d0
+0072999E  6600 0054                869      bne     returnGetObsticleSprite
+007299A2  2F7C 00000000 001C       870      move.l  #0, D7_OFFSET(sp)                   ** resets the frames since object has been created counter                      
+007299AA  226F 0030                871      move.l  A4_OFFSET(sp),a1 
+007299AE                           872      
+007299AE  206F 0038                873      move.l  A6_OFFSET(sp),a0 
+007299B2  7006                     874      move.l  #DRAW_PARAMETERS, d0                ** move how many paramaters we have to pass into the draw function
+007299B4  E588                     875      lsl.l   #2, d0                              ** multiply by 4 becasue we are using longs 
+007299B6                           876      
+007299B6  222F 0088                877      move.l  RANDOM_VALUE(sp),d1                 ** multiply it by the random number (gets a random object) 
+007299BA  C2C0                     878      mulu    d0, d1
+007299BC  2608                     879      move.l  a0, d3 
+007299BE  D681                     880      add.l   d1, d3                              ** add it to the pointer to obsticleSprites 
+007299C0  2043                     881      move.l  d3, a0    
+007299C2                           882      
+007299C2                           883  checkWhereToPutObject 
+007299C2  282F 00BC                884      move.l  OBJECT_1_X_CROP(sp), d4 
+007299C6  0C84 FFFFFFFF            885      cmpi.l  #$FFFFFFFF, d4 
+007299CC  6700 0006                886      beq     putInObject1
+007299D0  6600 0022                887      bne     returnGetObsticleSprite
+007299D4                           888   
+007299D4                           889  putInObject1:    
+007299D4  2F7C 00000000 001C       890      move.l  #0, D7_OFFSET(sp)
+007299DC  7006                     891      move.l  #DRAW_PARAMETERS, d0
+007299DE                           892  object1Loop:
+007299DE  2A19                     893      move.l  (a1)+, d5                           ** puts and the value at a1 (obsticleLocations) into d5 and post increments the location in memory
+007299E0  2818                     894      move.l  (a0)+, d4                           ** puts and the value at a0 (obsticleSprites) into d4 and post increments the location in memory
+007299E2  2F84 5000                895      move.l  d4,(sp,d5)                          ** puts the value of d4, into the right location on the stack ( as determined by d5) 
+007299E6  5380                     896      subi.l  #1, d0 
+007299E8  0C80 00000000            897      cmpi.l  #0, d0
+007299EE  66EE                     898      bne     object1Loop
+007299F0  6700 0002                899      beq     returnGetObsticleSprite
+007299F4                           900  
+007299F4                           901  returnGetObsticleSprite
+007299F4  4CDF 7FFF                902      movem.l (sp)+, ALL_REG
+007299F8  4E75                     903      rts                                        ** return, and reset the stack  
+007299FA                           904  
+007299FA                           905  
+007299FA                           906  -------------------- end include --------------------
+007299FA                           907  include1    INCLUDE     "KeyboardInput.X68"
+007299FA                           908  getKeyboardInput:
+007299FA  48E7 FFFE                909      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+007299FE                           910  
+007299FE                           911      **checks if the user presses 'SPACE' 
+007299FE  7220                     912      move.l  #KEY_SPACE_INPUT, d1 
+00729A00  103C 0013                913      move.b  #USER_INPUT_TRAP_CODE, d0 
+00729A04  4E4F                     914      trap    #15
+00729A06  2F41 0040                915      move.l  d1,KEYCODE_VALUE(sp) 
+00729A0A                           916      
+00729A0A  4CDF 7FFF                917      movem.l (sp)+, ALL_REG
+00729A0E  4E75                     918      rts                                        ** return, and reset the stack 
+00729A10                           919      
+00729A10                           920  getMouseInput: 
+00729A10  48E7 FFFE                921      movem.l ALL_REG, -(sp)
+00729A14                           922      
+00729A14                           923  mouseInputLoop:
+00729A14                           924      **chekcs to see if "ESC" is pressed on the keyboard 
+00729A14                           925      **if it is set a bool to quit application 
+00729A14  721B                     926      move.l  #KEY_ESCAPE_INPUT, d1
+00729A16  103C 0013                927      move.b  #USER_INPUT_TRAP_CODE, d0 
+00729A1A  4E4F                     928      trap    #15
+00729A1C  0281 000000FF            929      andi.l  #$FF,d1
+00729A22  6600 0018                930      bne     setQuitAppBool 
+00729A26                           931      
+00729A26                           932      **checks to see if the left mouse button is pressed down 
+00729A26                           933      ** if it is load the level, else keep looping 
+00729A26  123C 0000                934      move.b  #0, d1 
+00729A2A  103C 003D                935      move.b  #MOUSE_STATE_TRAP_CODE, d0 
+00729A2E  4E4F                     936      trap    #15
+00729A30  0C00 0001                937      cmpi.b  #1, d0 
+00729A34  66DE                     938      bne     mouseInputLoop
+00729A36                           939  returnGetMouseInput:
+00729A36  4CDF 7FFF                940      movem.l (sp)+, ALL_REG
+00729A3A  4E75                     941      rts                                        ** return, and reset the stack 
+00729A3C                           942      
+00729A3C                           943  setQuitAppBool:
+00729A3C  2F7C 00000001 00E4       944      move.l  #1, (QUIT_APP_BOOL)(sp)             
+00729A44  60F0                     945      bra     returnGetMouseInput
+00729A46                           946    
+00729A46                           947      
+00729A46                           948  
+00729A46                           949  
+00729A46                           950  -------------------- end include --------------------
+00729A46                           951  include2    INCLUDE     "UpdatePlayer.X68"
+00729A46                           952  updatePlayerSprite:
+00729A46  48E7 FFFE                953      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00729A4A                           954      
+00729A4A                           955      ** move the players current position into the stack, to be accessed in the drawBackground function
+00729A4A  2F6F 0010 0044           956      move.l  D4_OFFSET(sp),PLAYER_X_CROP(sp)
+00729A50  2F6F 0014 0048           957      move.l  D5_OFFSET(sp),PLAYER_Y_CROP(sp)
+00729A56  2F6F 0008 004C           958      move.l  D2_OFFSET(sp),PLAYER_WIDTH(sp)
+00729A5C  2F6F 000C 0050           959      move.l  D3_OFFSET(sp),PLAYER_HEIGHT(sp)
+00729A62  2F6F 0010 0054           960      move.l  D4_OFFSET(sp),PLAYER_X_DISPLAY(sp)
+00729A68  2F6F 0014 0058           961      move.l  D5_OFFSET(sp),PLAYER_Y_DISPLAY(sp)
+00729A6E                           962  
+00729A6E  222F 0040                963      move.l  KEYCODE_VALUE(sp), d1 
+00729A72  0281 000000FF            964      andi.l  #$FF, d1 
+00729A78  6600 001C                965      bne     jumping
+00729A7C                           966  
+00729A7C                           967  running: 
+00729A7C  202F 0018                968      move.l  D6_OFFSET(sp),d0
+00729A80  7200                     969      move.l  #0,d1 
+00729A82  242F 0008                970      move.l  D2_OFFSET(sp),d2 
+00729A86                           971      
+00729A86  C4C0                     972      mulu    d0,d2
+00729A88  D282                     973      add.l   d2,d1
+00729A8A  2F41 0000                974      move.l  d1,D0_OFFSET(sp)
+00729A8E  2F41 005C                975      move.l  d1,PLAYER_SPRITE_X_CROP(sp)
+00729A92  6000 0068                976      bra     returnUpdatePlayerSprite
+00729A96                           977  
+00729A96                           978  ;p(t) = p(0) + v(0)t + a*t^2/2
+00729A96                           979  ; set some value to 1 if it reaches here, and check if that value in the draw player function to start a jumping animation
+00729A96                           980  ;
+00729A96                           981  jumping:
+00729A96  2F7C 00000001 0084       982      move.l  #1, IS_JUMPING(sp)
+00729A9E  202F 0014                983      move.l  D5_OFFSET(sp),d0
+00729AA2                           984      
+00729AA2                           985      ** change the position based off the current velocity 
+00729AA2                           986      ** velocity will change each frame based off of gravity 
+00729AA2  222F 0080                987      move.l  CUR_PLAYER_CHANGE_IN_VELOCITY(sp), d1           ** this is a value that goes up and is used to shift to know what to subtract from the players velocity 
+00729AA6  282F 007C                988      move.l  CUR_PLAYER_VELOCITY(sp),d4
+00729AAA  243C FFFFFF52            989      move.l  #GRAVITY, d2
+00729AB0  9282                     990      sub.l   d2, d1                                          ** add gravity to CUR_PLAYER_CHANGE_IN_VELOCITY
+00729AB2  2601                     991      move.l  d1, d3 
+00729AB4  2F43 0080                992      move.l  d3, CUR_PLAYER_CHANGE_IN_VELOCITY(sp)
+00729AB8  E08B                     993      lsr.l   #8, d3                                          ** shift it by 8 to determine what value to subtract from the CUR_PLAYER_VELOCITY 
+00729ABA  9883                     994      sub.l   d3, d4 
+00729ABC  2F44 007C                995      move.l  d4, CUR_PLAYER_VELOCITY(sp)
+00729AC0  9084                     996      sub.l   d4, d0                                          ** subtract the current players velocity from the players y position 
+00729AC2                           997  
+00729AC2                           998  
+00729AC2  2F40 0014                999      move.l  d0, D5_OFFSET(sp)
+00729AC6  2F40 0070               1000      move.l  d0,PLAYER_SPRITE_Y_DISPLAY(sp)
+00729ACA                          1001      
+00729ACA  0C80 0000019A           1002      cmpi.l  #(DISPLAY_WINDOW_HEIGHT - 70), d0               ** checks to see if the player will go below the screen bounds, if it does then stop jumping, otherwise return 
+00729AD0  6D00 002A               1003      blt     returnUpdatePlayerSprite 
+00729AD4                          1004  
+00729AD4                          1005  stopJumping:
+00729AD4  2F7C 0000019A 0014      1006      move.l  #410, D5_OFFSET(sp)                             
+00729ADC  2F7C 0000019A 0070      1007      move.l  #410, PLAYER_SPRITE_Y_DISPLAY(sp)
+00729AE4  2F7C 00000000 0084      1008      move.l  #0, IS_JUMPING(sp)
+00729AEC  2F7C 00000014 007C      1009      move.l  #JUMP_VELOCITY, CUR_PLAYER_VELOCITY(sp)
+00729AF4  2F7C 00000014 0080      1010      move.l  #JUMP_VELOCITY, CUR_PLAYER_CHANGE_IN_VELOCITY(sp)  
+00729AFC                          1011  returnUpdatePlayerSprite
+00729AFC  4CDF 7FFF               1012      movem.l (sp)+, ALL_REG
+00729B00  4E75                    1013      rts                                        ** return, and reset the stack 
+00729B02                          1014  
+00729B02                          1015  
+00729B02                          1016  
+00729B02                          1017  -------------------- end include --------------------
+00729B02                          1018  include3    INCLUDE     "DrawBackground.X68"
+00729B02                          1019  drawBackground 
+00729B02  48E7 FFFE               1020      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00729B06                          1021     
+00729B06  2F6F 0010 FFFC          1022      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)    ** moves the starting width into the stack (bottom left) 
+00729B0C  202F 0014               1023      move.l  D5_OFFSET(sp),d0
+00729B10  D0AF 000C               1024      add.l   D3_OFFSET(sp),d0
+00729B14  2F40 FFF8               1025      move.l  d0, -CUR_DISPLAY_Y(sp)              ** moves the starting height into the stack (bottom left)
+00729B18  2F6F 000C FFF4          1026      move.l  D3_OFFSET(sp),-LOOP_COUNTER(sp)     ** initialize the loop counter to be the height of the crop 
+00729B1E                          1027    
+00729B1E  2628 0012               1028      move.l  OFFSET_TO_IMAGE_WIDTH(a0),d3        ** 18 is the offset in the header file for the width of the image 
+00729B22  E15B                    1029      rol.w   #8, d3                              ** Little Endian swap
+00729B24  4843                    1030      swap.w  d3 
+00729B26  E15B                    1031      rol.w   #8, d3      
+00729B28                          1032  
+00729B28  2828 0016               1033      move.l  OFFSET_TO_IMAGE_HEIGHT(a0),d4       ** 22 is the offset in the header file for the height of the image 
+00729B2C  E15C                    1034      rol.w   #8, d4                              ** Little Endian Swap
+00729B2E  4844                    1035      swap.w  d4 
+00729B30  E15C                    1036      rol.w   #8, d4      
+00729B32                          1037      
+00729B32  2A28 000A               1038      move.l  OFFSET_TO_IMAGE_OFFSET(a0),d5       ** 10 is the offset to the header location that stores the offset to the start of the pixel data from the start of the header
+00729B36  E15D                    1039      rol.w   #8, d5                              ** Little Endian Swap
+00729B38  4845                    1040      swap.w  d5
+00729B3A  E15D                    1041      rol.w   #8, d5
+00729B3C  DA88                    1042      add.l   a0, d5
+00729B3E  2645                    1043      move.l  d5, a3                              **a2 is a pointer to the start of the pixel data (bottom left corner)
+00729B40                          1044           
+00729B40  2C03                    1045      move.l  d3, d6               
+00729B42  2E04                    1046      move.l  d4, d7               
+00729B44  7A00                    1047      move.l  #0, d5               
+00729B46                          1048  getInitialBackgroundOffset: 
+00729B46  DAAF 0004               1049      add.l   D1_OFFSET(sp),d5 
+00729B4A  DAAF 000C               1050      add.l   D3_OFFSET(sp),d5 
+00729B4E  9E85                    1051      sub.l   d5, d7
+00729B50  CEC3                    1052      mulu    d3, d7 
+00729B52  DEAF 0000               1053      add.l   D0_OFFSET(sp),d7
+00729B56  E58F                    1054      lsl.l   #2, d7                             ** multiply by 4 by shifting it to the left by 4 bits 
+00729B58  D7C7                    1055      adda.l  d7, a3                             ** adds the offset to the pointer
+00729B5A                          1056        
+00729B5A                          1057  drawBackgroundRow: 
+00729B5A  221B                    1058      move.l  (a3)+, d1                          ** move the first byte into memory 
+00729B5C  E089                    1059      lsr.l   #8, d1                             ** shift to trash the alpha (00 BB GG RR format) 
+00729B5E  7050                    1060      move.l  #PEN_COLOR_TRAP_CODE,d0            ** make that pen color 
+00729B60  4E4F                    1061      trap    #15
+00729B62                          1062      
+00729B62  222F FFFC               1063      move.l  -CUR_DISPLAY_X(sp),d1              ** get the current width and height (of the display), draw at that location
+00729B66  242F FFF8               1064      move.l  -CUR_DISPLAY_Y(sp),d2
+00729B6A  7052                    1065      move.l  #DRAW_PIXEL_TRAP_CODE, d0
+00729B6C  4E4F                    1066      trap    #15
+00729B6E                          1067      
+00729B6E  5281                    1068      addi.l  #1, d1                             ** increment the width 
+00729B70  2A2F 0008               1069      move.l  D2_OFFSET(sp),d5
+00729B74  DAAF 0010               1070      add.l   D4_OFFSET(sp),d5
+00729B78  2F41 FFFC               1071      move.l  d1, -CUR_DISPLAY_X(sp)
+00729B7C  BA81                    1072      cmp.l   d1, d5                             ** compare it to the width of the crop 
+00729B7E  6EDA                    1073      bgt     drawBackgroundRow                            ** keep drawing until cur_width = crop_width
+00729B80                          1074      
+00729B80  2F6F 0010 FFFC          1075      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)
+00729B86  5382                    1076      subi.l  #1, d2                             ** decrement the height 
+00729B88  2F42 FFF8               1077      move.l  d2, -CUR_DISPLAY_Y(sp)
+00729B8C                          1078  
+00729B8C                          1079  skipBackgroundBytes:
+00729B8C  2A06                    1080      move.l  d6, d5
+00729B8E  9AAF 0008               1081      sub.l   D2_OFFSET(sp),d5
+00729B92  E58D                    1082      lsl.l   #2, d5 
+00729B94  D7C5                    1083      adda.l  d5, a3                             ** adds the offset as calculated above in skipBytes description to the pixel data pointer
+00729B96  222F FFF4               1084      move.l  -LOOP_COUNTER(sp),d1
+00729B9A  5381                    1085      subi.l  #1, d1 
+00729B9C  2F41 FFF4               1086      move.l  d1, -LOOP_COUNTER(sp)
+00729BA0  B2BC 00000000           1087      cmp.l   #0, d1
+00729BA6  6CB2                    1088      bge     drawBackgroundRow                            ** branch to drawRow as long as the loop counter doesnt reach 0  
+00729BA8                          1089  
+00729BA8  4CDF 7FFF               1090      movem.l (sp)+, ALL_REG
+00729BAC  4E75                    1091      rts                                        ** return, and reset the stack 
+00729BAE                          1092  
+00729BAE                          1093  
+00729BAE                          1094  
+00729BAE                          1095  
+00729BAE                          1096  -------------------- end include --------------------
+00729BAE                          1097  ;include4    INCLUDE     "RedrawBackground.X68"
+00729BAE                          1098  include5    INCLUDE     "DrawPlayer.X68"
+00729BAE                          1099  drawPlayerSprite: 
+00729BAE  48E7 FFFE               1100      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00729BB2                          1101     
+00729BB2  2F6F 0010 FFFC          1102      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)    ** moves the starting width into the stack (bottom left) 
+00729BB8  202F 0014               1103      move.l  D5_OFFSET(sp),d0 
+00729BBC  D0AF 000C               1104      add.l   D3_OFFSET(sp),d0
+00729BC0  2F40 FFF8               1105      move.l  d0, -CUR_DISPLAY_Y(sp)              ** moves the starting height into the stack (bottom left)
+00729BC4  2F6F 000C FFF4          1106      move.l  D3_OFFSET(sp),-LOOP_COUNTER(sp)     ** initialize the loop counter to be the height of the crop 
+00729BCA                          1107    
+00729BCA  2628 0012               1108      move.l  OFFSET_TO_IMAGE_WIDTH(a0),d3        ** 18 is the offset in the header file for the width of the image 
+00729BCE  E15B                    1109      rol.w   #8, d3                              ** Little Endian swap
+00729BD0  4843                    1110      swap.w  d3 
+00729BD2  E15B                    1111      rol.w   #8, d3      
+00729BD4                          1112  
+00729BD4  2828 0016               1113      move.l  OFFSET_TO_IMAGE_HEIGHT(a0),d4       ** 22 is the offset in the header file for the height of the image 
+00729BD8  E15C                    1114      rol.w   #8, d4                              ** Little Endian Swap
+00729BDA  4844                    1115      swap.w  d4 
+00729BDC  E15C                    1116      rol.w   #8, d4      
+00729BDE                          1117       
+00729BDE  2A28 000A               1118      move.l  OFFSET_TO_IMAGE_OFFSET(a0),d5       ** 10 is the offset to the header location that stores the offset to the start of the pixel data from the start of the header
+00729BE2  E15D                    1119      rol.w   #8, d5                              ** Little Endian Swap
+00729BE4  4845                    1120      swap.w  d5
+00729BE6  E15D                    1121      rol.w   #8, d5
+00729BE8  DA88                    1122      add.l   a0, d5
+00729BEA  2445                    1123      move.l  d5, a2                              **a2 is a pointer to the start of the pixel data (bottom left corner)
+00729BEC                          1124         
+00729BEC                          1125      
+00729BEC  2C03                    1126      move.l  d3, d6               
+00729BEE  2E04                    1127      move.l  d4, d7               
+00729BF0  7A00                    1128      move.l  #0, d5               
+00729BF2                          1129  getInitialOffset: 
+00729BF2  DAAF 0004               1130      add.l   D1_OFFSET(sp),d5 
+00729BF6  DAAF 000C               1131      add.l   D3_OFFSET(sp),d5 
+00729BFA  9E85                    1132      sub.l   d5, d7
+00729BFC  CEC3                    1133      mulu    d3, d7 
+00729BFE  DEAF 0000               1134      add.l   D0_OFFSET(sp),d7
+00729C02  E58F                    1135      lsl.l   #2, d7                             ** multiply by 4 by shifting it to the left by 4 bits 
+00729C04  D5C7                    1136      adda.l  d7, a2                             ** adds the offset to the pointer
+00729C06  6000 0022               1137      bra     drawRow
+00729C0A                          1138  
+00729C0A                          1139  incrementRow:
+00729C0A  222F FFFC               1140      move.l  -CUR_DISPLAY_X(sp),d1 
+00729C0E                          1141      
+00729C0E  5281                    1142      addi.l  #1, d1                             ** increment the width 
+00729C10  2A2F 0008               1143      move.l  D2_OFFSET(sp),d5
+00729C14  DAAF 0010               1144      add.l   D4_OFFSET(sp),d5
+00729C18  2F41 FFFC               1145      move.l  d1, -CUR_DISPLAY_X(sp)
+00729C1C  BA81                    1146      cmp.l   d1, d5                             ** compare it to the width of the crop 
+00729C1E  6E00 000A               1147      bgt     drawRow                            ** keep drawing until cur_width = crop_width
+00729C22  242F FFF8               1148      move.l  -CUR_DISPLAY_Y(sp),d2
+00729C26  6000 0030               1149      bra     incrementHeight
+00729C2A                          1150  drawRow: 
+00729C2A  221A                    1151      move.l  (a2)+, d1                          ** move the first byte into memory 
+00729C2C  E089                    1152      lsr.l   #8, d1                             ** shift to trash the alpha (00 BB GG RR format) 
+00729C2E  B2BC 00808000           1153      cmp.l   #SPRITE_BACKGROUND_COLOR, d1
+00729C34  67D4                    1154      beq     incrementRow                       ** go to increment row to ignore the background color 
+00729C36  7050                    1155      move.l  #PEN_COLOR_TRAP_CODE,d0            ** make that pen color 
+00729C38  4E4F                    1156      trap    #15
+00729C3A                          1157      
+00729C3A  222F FFFC               1158      move.l  -CUR_DISPLAY_X(sp),d1              ** get the current width and height (of the display), draw at that location
+00729C3E  242F FFF8               1159      move.l  -CUR_DISPLAY_Y(sp),d2
+00729C42  7052                    1160      move.l  #DRAW_PIXEL_TRAP_CODE, d0
+00729C44  4E4F                    1161      trap    #15
+00729C46                          1162      
+00729C46  5281                    1163      addi.l  #1, d1                             ** increment the width 
+00729C48  2A2F 0008               1164      move.l  D2_OFFSET(sp),d5
+00729C4C  DAAF 0010               1165      add.l   D4_OFFSET(sp),d5
+00729C50  2F41 FFFC               1166      move.l  d1, -CUR_DISPLAY_X(sp)
+00729C54  BA81                    1167      cmp.l   d1, d5                             ** compare it to the width of the crop 
+00729C56  6ED2                    1168      bgt     drawRow                            ** keep drawing until cur_width = crop_width
+00729C58                          1169  incrementHeight:   
+00729C58  2F6F 0010 FFFC          1170      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)
+00729C5E  5382                    1171      subi.l  #1, d2                             ** decrement the height 
+00729C60  2F42 FFF8               1172      move.l  d2, -CUR_DISPLAY_Y(sp)
+00729C64                          1173  
+00729C64                          1174  skipBytes:
+00729C64  2A06                    1175      move.l  d6, d5
+00729C66  9AAF 0008               1176      sub.l   D2_OFFSET(sp),d5
+00729C6A  E58D                    1177      lsl.l   #2, d5 
+00729C6C  D5C5                    1178      adda.l  d5, a2                             ** adds the offset as calculated above in skipBytes description to the pixel data pointer
+00729C6E  222F FFF4               1179      move.l  -LOOP_COUNTER(sp),d1
+00729C72  5381                    1180      subi.l  #1, d1 
+00729C74  2F41 FFF4               1181      move.l  d1, -LOOP_COUNTER(sp)
+00729C78  B2BC 00000000           1182      cmp.l   #0, d1
+00729C7E  6CAA                    1183      bge     drawRow                            ** branch to drawRow as long as the loop counter doesnt reach 0  
+00729C80                          1184  
+00729C80                          1185  updateSpriteToDraw
+00729C80  2F7C 00000000 0000      1186      move.l  #0,D0_OFFSET(sp)
+00729C88  2C2F 0018               1187      move.l  D6_OFFSET(sp),d6                  **
+00729C8C  5286                    1188      addi.l  #1, d6
+00729C8E  0C86 00000006           1189      cmpi.l  #RUNNING_SPRITE_COUNT,d6 
+00729C94  6C00 000A               1190      bge     resetSpriteCounter
+00729C98                          1191  incrementSpriteCounter:
+00729C98  2F46 0018               1192      move.l  d6, D6_OFFSET(sp) 
+00729C9C  6000 0008               1193      bra     returnDrawPlayerSprite  
+00729CA0                          1194  resetSpriteCounter:
+00729CA0  7C00                    1195      move.l  #0, d6
+00729CA2  2F46 0018               1196      move.l  d6, D6_OFFSET(sp) 
+00729CA6                          1197  returnDrawPlayerSprite:
+00729CA6  4CDF 7FFF               1198      movem.l (sp)+, ALL_REG
+00729CAA  4E75                    1199      rts                                        ** return, and reset the stack 
+00729CAC                          1200  
+00729CAC                          1201  
+00729CAC                          1202  
+00729CAC                          1203  
+00729CAC                          1204  
+00729CAC                          1205  
+00729CAC                          1206  -------------------- end include --------------------
+00729CAC                          1207  include6    INCLUDE     "Random.X68"
+00729CAC                          1208  getRandomValue:
+00729CAC  48E7 FFFE               1209      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack
+00729CB0                          1210      
+00729CB0  103C 0008               1211      move.b  #8, d0 
+00729CB4  4E4F                    1212      trap    #15                                 ** moves the current time into d1 
+00729CB6  2401                    1213      move.l  d1, d2 
+00729CB8  C4BC 0001FFFF           1214      and.l   #$1FFFF,d2                          ** bit mask needed for dividing by 4 
+00729CBE  84FC 0004               1215      divu    #4,d2
+00729CC2  4242                    1216      clr.w   d2
+00729CC4  4842                    1217      swap    d2                                  ** puts the remainder of the divide into d2, as the random value 
+00729CC6                          1218      
+00729CC6  2F42 0088               1219      move.l  d2, RANDOM_VALUE(sp)                ** move the random value into the location in memory on the stack 
+00729CCA  4CDF 7FFF               1220      movem.l (sp)+, ALL_REG
+00729CCE  4E75                    1221      rts                                        ** return, and reset the stack 
+00729CD0                          1222  
+00729CD0  FFFF FFFF               1223      SIMHALT             ; halt simulator
+00729CD4                          1224  
+00729CD4                          1225  
+00729CD4                          1226      END    START        ; last line of source
+00729CD4                          1227  -------------------- end include --------------------
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+A0_OFFSET           20
+A1_OFFSET           24
+A2_OFFSET           28
+A3_OFFSET           2C
+A4_OFFSET           30
+A5_OFFSET           34
+A6_OFFSET           38
+ADDSCORE            7296EC
+ALL_REG             7FFF
+BACKGROUND          1294
+BACKGROUND_SPRITE_SHEET_POINTER  78
+BITMAP32            12D2CA
+BITMASKTABLE        7294FE
+BIT_DEPTH           20
+BMP_FILE_TYPE       424D
+CHECKCOLLISIONS     729724
+CHECKWHERETOPUTOBJECT  7299C2
+CLEARSEVENSEGMENT   7295E2
+CLEAR_SCREEN_COMMAND  B
+CLEAR_SCREEN_MAGIC_VAL  FF00
+COLLIDING           729776
+CONTINUE            11C4
+CR                  D
+CUR_DISPLAY_X       4
+CUR_DISPLAY_Y       8
+CUR_PLAYER_CHANGE_IN_VELOCITY  80
+CUR_PLAYER_VELOCITY  7C
+D0_OFFSET           0
+D1_OFFSET           4
+D2_OFFSET           8
+D3_OFFSET           C
+D4_OFFSET           10
+D5_OFFSET           14
+D6_OFFSET           18
+D7_OFFSET           1C
+DESTROYOBSTICLE     729780
+DESTROY_OBJECT_BOOL  D8
+DISPLAY_STRING_TRAP_CODE  E
+DISPLAY_WINDOW_HEIGHT  1E0
+DISPLAY_WINDOW_WIDTH  280
+DOUBLE_BUFFERED_MODE  11
+DRAW10S7SEGMENT     7296B4
+DRAW1S7SEGMENT      72967C
+DRAWBACKGROUND      729B02
+DRAWBACKGROUNDROW   729B5A
+DRAWENDSCREEN       1266
+DRAWING_MODE_TRAP_CODE  5C
+DRAWLOCATIONS10S    729540
+DRAWLOCATIONS1S     729508
+DRAWOBSTICLE1       11B8
+DRAWOBSTICLEROW     729838
+DRAWOBSTICLESPRITE  7297BC
+DRAWPLAYERSPRITE    729BAE
+DRAWROW             729C2A
+DRAW_LINE_TRAP_CODE  54
+DRAW_PARAMETERS     6
+DRAW_PIXEL_TRAP_CODE  52
+DRAW_RECTANGLE_COMMAND  57
+ENDGAME             11F2
+ERROR_COUNTER_OFFSET  4
+FILL_COLOR_TRAP__CODE  51
+FRAMES_SKIP_TO_DRAW  9
+GAMELOOP            113C
+GAMESTARTCOMMAND    72958E
+GAMETITLE           729580
+GETINITIALBACKGROUNDOFFSET  729B46
+GETINITIALOFFSET    729BF2
+GETKEYBOARDINPUT    7299FA
+GETMOUSEINPUT       729A10
+GETOBSTICLEINITIALOFFSET  729800
+GETOBSTICLESPRITE   729990
+GETRANDOMVALUE      729CAC
+GRAVITY             FFFFFF52
+HOWTOPLAY           7295C2
+IGNOREKEYBOARDINPUT  1150
+INCLUDE1            7299FA
+INCLUDE10           7297BC
+INCLUDE11           729780
+INCLUDE12           729724
+INCLUDE13           7296EC
+INCLUDE14           72960A
+INCLUDE15           7295E2
+INCLUDE2            729A46
+INCLUDE3            729B02
+INCLUDE5            729BAE
+INCLUDE6            729CAC
+INCLUDE7            729894
+INCLUDE8            729990
+INCLUDE9            72995E
+INCREMENTHEIGHT     729C58
+INCREMENTOBSTICLEHEIGHT  729866
+INCREMENTOBSTICLEROW  729818
+INCREMENTROW        729C0A
+INCREMENTSPRITECOUNTER  729C98
+IS_JUMPING          84
+JUMPING             729A96
+JUMP_VELOCITY       14
+KEYCODE_VALUE       40
+KEY_ESCAPE_INPUT    1B
+KEY_SPACE_INPUT     20
+LF                  A
+LOADGAME            10A2
+LOADING             38819E
+LOADINGSCREEN       104A
+LOADLOSE            1256
+LOADSTARTSCREEN     107C
+LOADWIN             1260
+LOOP10SDIGIT        72965A
+LOOP1SDIGIT         729630
+LOOP_COUNTER        C
+LOSESCREEN          3A52E8
+MOUSEINPUTLOOP      729A14
+MOUSE_STATE_TRAP_CODE  3D
+NOTCOLLIDING        72977A
+OBJECT1LOOP         7299DE
+OBJECT_1_HEIGHT     C8
+OBJECT_1_WIDTH      C4
+OBJECT_1_X_CROP     BC
+OBJECT_1_X_DISPLAY  CC
+OBJECT_1_Y_CROP     C0
+OBJECT_1_Y_DISPLAY  D0
+OBJECT_2_HEIGHT     B0
+OBJECT_2_WIDTH      AC
+OBJECT_2_X_CROP     A4
+OBJECT_2_X_DISPLAY  B4
+OBJECT_2_Y_CROP     A8
+OBJECT_2_Y_DISPLAY  B8
+OBJECT_3_HEIGHT     98
+OBJECT_3_WIDTH      94
+OBJECT_3_X_CROP     8C
+OBJECT_3_X_DISPLAY  9C
+OBJECT_3_Y_CROP     90
+OBJECT_3_Y_DISPLAY  A0
+OBJECT_VELOCITY     23
+OBSTICLE1           729962
+OBSTICLELOCATION    729456
+OBSTICLELOOP        7297A2
+OBSTICLES           36FB54
+OBSTICLESPRITES     72949E
+OBSTICLES_SPRITE_SHEET_POINTER  D4
+OBSTICLE_BACKGROUND_COLOR  0
+OFFSETTO10SDIGIT    72964C
+OFFSETTO1DIGIT      72962A
+OFFSET_TO_FILE_SIZE  2
+OFFSET_TO_IMAGE_BIT_DEPTH  1C
+OFFSET_TO_IMAGE_HEIGHT  16
+OFFSET_TO_IMAGE_OFFSET  A
+OFFSET_TO_IMAGE_WIDTH  12
+PEN_COLOR_TRAP_CODE  50
+PEN_WIDTH           2
+PEN_WIDTH_TRAP_CODE  5D
+PLAYER_HEIGHT       50
+PLAYER_SPRITE_HEIGHT  68
+PLAYER_SPRITE_SHEET_POINTER  74
+PLAYER_SPRITE_WIDTH  64
+PLAYER_SPRITE_X_CROP  5C
+PLAYER_SPRITE_X_DISPLAY  6C
+PLAYER_SPRITE_Y_CROP  60
+PLAYER_SPRITE_Y_DISPLAY  70
+PLAYER_WIDTH        4C
+PLAYER_X_CROP       44
+PLAYER_X_DISPLAY    54
+PLAYER_Y_CROP       48
+PLAYER_Y_DISPLAY    58
+PUTINOBJECT1        7299D4
+PUTOBSTICLE1INREGISTERS  7298D2
+PUTOBSTICLE1LOCATIONINREGISTERS  729912
+PUTOBSTICLE2INREGISTERS  7298F2
+PUTOBSTICLE2LOCATIONINREGISTERS  729938
+PUTPLAYERCROPLOCATIONINREGISTERS  7298B2
+PUTPLAYERSPRITEINREGISTERS  729894
+QUIT_APP_BOOL       E4
+RANDOM_VALUE        88
+REGISTERS_OFFSET    40
+REGISTERS_OFFSET_2  3C
+REPAINT_SCREEN_TRAP_CODE  5E
+RESETSPRITECOUNTER  729CA0
+RETURNADDSCORE      72971E
+RETURNDRAWOBSTICLESPRITE  72988E
+RETURNDRAWPLAYERSPRITE  729CA6
+RETURNGETMOUSEINPUT  729A36
+RETURNGETOBSTICLESPRITE  7299F4
+RETURNUPDATEOBSTICLE  72998A
+RETURNUPDATEPLAYERSPRITE  729AFC
+RUNNING             729A7C
+RUNNING_SPRITE_COUNT  6
+SCORE               DC
+SCORE_ADDED_BOOL    E0
+SETQUITAPPBOOL      729A3C
+SET_FONT_PROPERTIES_TRAP_CODE  15
+SET_OUTPUT_RESOLUTION_TRAP_CODE  21
+SEVENSEGMENT        72960A
+SEVENSEGMENTLOCATION  729578
+SKIP10SDRAW         72966A
+SKIP1SDRAW          729640
+SKIPBACKGROUNDBYTES  729B8C
+SKIPBYTES           729C64
+SKIPOBSTICLEBYTES   729872
+SPRITE_BACKGROUND_COLOR  808000
+STACK_POINTER_OFFSET  A8
+START               1000
+STARTGAME           10D6
+STARTSCREEN         5FD3DC
+STOP                1286
+STOPJUMPING         729AD4
+SWAPBUFFERS         1276
+TITLE_FONT_COLOR    FFA500FF
+UPDATEOBSTICLE      72995E
+UPDATEPLAYERSPRITE  729A46
+UPDATESPRITETODRAW  729C80
+USER_INPUT_TRAP_CODE  13
+WHITE               FFFFFF
+WINSCREEN           4D1362

@@ -1,0 +1,202 @@
+00000000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/5/2021 6:30:33 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  drawPlayerSprite: 
+Line 8 ERROR: Undefined symbol
+00000000                             8      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00000000                             9     
+Line 10 ERROR: Undefined symbol
+00000000  2F6F BD16 55DC            10      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)    ** moves the starting width into the stack (bottom left) 
+Line 11 ERROR: Undefined symbol
+00000006  202F BD16                 11      move.l  D5_OFFSET(sp),d0
+0000000A                            12      ;cmpi.l  #410, d0 
+0000000A                            13      ;blt     stillJumping
+0000000A                            14  ;notJumping: 
+0000000A                            15      ;move.l  #0, IS_JUMPING(sp)
+0000000A                            16      ;move.l  #JUMP_VELOCITY, CUR_PLAYER_VELOCITY(sp)
+0000000A                            17      ;move.l  #JUMP_VELOCITY, CUR_PLAYER_CHANGE_IN_VELOCITY(sp)  
+0000000A                            18      ;bra     didntShiftPlayerBits
+0000000A                            19  stillJumping:
+Line 20 ERROR: Undefined symbol
+0000000A  2C2F BD16                 20      move.l  IS_JUMPING(sp),d6 
+0000000E  0C86 00000001             21      cmpi.l  #1, d6
+00000014  6600 0008                 22      bne     didntShiftPlayerBits
+00000018                            23  shiftPlayerBits:
+00000018  2C00                      24      move.l  d0, d6
+0000001A  E08E                      25      lsr.l   #8, d6
+0000001C  9086                      26      sub.l   d6, d0
+0000001E                            27  didntShiftPlayerBits:  
+Line 28 ERROR: Undefined symbol
+0000001E  D0AF BD16                 28      add.l   D3_OFFSET(sp),d0
+Line 29 ERROR: Undefined symbol
+00000022  2F40 55DC                 29      move.l  d0, -CUR_DISPLAY_Y(sp)              ** moves the starting height into the stack (bottom left)
+Line 30 ERROR: Undefined symbol
+00000026  2F6F BD16 55E8            30      move.l  D3_OFFSET(sp),-LOOP_COUNTER(sp)     ** initialize the loop counter to be the height of the crop 
+0000002C                            31    
+Line 32 ERROR: Undefined symbol
+0000002C  2628 BD16                 32      move.l  OFFSET_TO_IMAGE_WIDTH(a0),d3        ** 18 is the offset in the header file for the width of the image 
+00000030  E15B                      33      rol.w   #8, d3                              ** Little Endian swap
+00000032  4843                      34      swap.w  d3 
+00000034  E15B                      35      rol.w   #8, d3      
+00000036                            36  
+Line 37 ERROR: Undefined symbol
+00000036  2828 BD16                 37      move.l  OFFSET_TO_IMAGE_HEIGHT(a0),d4       ** 22 is the offset in the header file for the height of the image 
+0000003A  E15C                      38      rol.w   #8, d4                              ** Little Endian Swap
+0000003C  4844                      39      swap.w  d4 
+0000003E  E15C                      40      rol.w   #8, d4      
+00000040                            41       
+Line 42 ERROR: Undefined symbol
+00000040  2A28 BD16                 42      move.l  OFFSET_TO_IMAGE_OFFSET(a0),d5       ** 10 is the offset to the header location that stores the offset to the start of the pixel data from the start of the header
+00000044  E15D                      43      rol.w   #8, d5                              ** Little Endian Swap
+00000046  4845                      44      swap.w  d5
+00000048  E15D                      45      rol.w   #8, d5
+0000004A  DA88                      46      add.l   a0, d5
+0000004C  2445                      47      move.l  d5, a2                              **a2 is a pointer to the start of the pixel data (bottom left corner)
+0000004E                            48         
+0000004E                            49      
+0000004E  2C03                      50      move.l  d3, d6               
+00000050  2E04                      51      move.l  d4, d7               
+00000052  7A00                      52      move.l  #0, d5               
+00000054                            53  **jumps to the bottom left corner of the bitmap chunk to be drawn in memory by getting the offset in bytes 
+00000054                            54  **or in terms of coordinates...this is (x = crop_x, y = crop_y + crop_height) 
+00000054                            55  **this is done by: (((Image_Height - (crop_y + crop_height)) * Image_Width) + crop_x) * 4 
+00000054                            56  *d5 is used as a buffer to store temporary values for this calcualtion 
+00000054                            57  getInitialOffset: 
+Line 58 ERROR: Undefined symbol
+00000054  DAAF BD16                 58      add.l   D1_OFFSET(sp),d5 
+Line 59 ERROR: Undefined symbol
+00000058  DAAF BD16                 59      add.l   D3_OFFSET(sp),d5 
+0000005C  9E85                      60      sub.l   d5, d7
+0000005E  CEC3                      61      mulu    d3, d7 
+Line 62 ERROR: Undefined symbol
+00000060  DEAF BD16                 62      add.l   D0_OFFSET(sp),d7
+00000064  E58F                      63      lsl.l   #2, d7                             ** multiply by 4 by shifting it to the left by 4 bits 
+00000066  D5C7                      64      adda.l  d7, a2                             ** adds the offset to the pointer
+00000068  6000 0022                 65      bra     drawRow
+0000006C                            66  
+0000006C                            67  ** increments the display index if the pixel isnt drawn because it is the background color of the sprite image     
+0000006C                            68  incrementRow:
+Line 69 ERROR: Undefined symbol
+0000006C  222F BD16                 69      move.l  -CUR_DISPLAY_X(sp),d1 
+00000070                            70      
+00000070  5281                      71      addi.l  #1, d1                             ** increment the width 
+Line 72 ERROR: Undefined symbol
+00000072  2A2F BD16                 72      move.l  D2_OFFSET(sp),d5
+Line 73 ERROR: Undefined symbol
+00000076  DAAF BD16                 73      add.l   D4_OFFSET(sp),d5
+Line 74 ERROR: Undefined symbol
+0000007A  2F41 55B8                 74      move.l  d1, -CUR_DISPLAY_X(sp)
+0000007E  BA81                      75      cmp.l   d1, d5                             ** compare it to the width of the crop 
+00000080  6E00 000A                 76      bgt     drawRow                            ** keep drawing until cur_width = crop_width
+Line 77 ERROR: Undefined symbol
+00000084  242F BD16                 77      move.l  -CUR_DISPLAY_Y(sp),d2
+00000088  6000 0038                 78      bra     incrementHeight
+0000008C                            79  **now that we are pointing to the bottom row of pixel data to be drawn.
+0000008C                            80  **set the pen color for each pixel. 
+0000008C                            81  **then draw at the appropriate location on the screen (as desired by the user)
+0000008C                            82  **it draws until it reaches the end of the row, then decrements the height and jumps down to 'skipBytes'
+0000008C                            83  *d5 is used for checking if we are done drawing the row 
+0000008C                            84  drawRow: 
+0000008C  221A                      85      move.l  (a2)+, d1                          ** move the first byte into memory 
+0000008E  E089                      86      lsr.l   #8, d1                             ** shift to trash the alpha (00 BB GG RR format) 
+Line 87 ERROR: Undefined symbol
+00000090  B2BC 004DBD16             87      cmp.l   #SPRITE_BACKGROUND_COLOR, d1
+00000096  67D4                      88      beq     incrementRow                       ** go to increment row to ignore the background color 
+Line 89 ERROR: Undefined symbol
+00000098  203C 004DBD16             89      move.l  #PEN_COLOR_TRAP_CODE,d0            ** make that pen color 
+0000009E  4E4F                      90      trap    #15
+000000A0                            91      
+Line 92 ERROR: Undefined symbol
+000000A0  222F BD16                 92      move.l  -CUR_DISPLAY_X(sp),d1              ** get the current width and height (of the display), draw at that location
+Line 93 ERROR: Undefined symbol
+000000A4  242F BD16                 93      move.l  -CUR_DISPLAY_Y(sp),d2
+Line 94 ERROR: Undefined symbol
+000000A8  203C 004DBD16             94      move.l  #DRAW_PIXEL_TRAP_CODE, d0
+000000AE  4E4F                      95      trap    #15
+000000B0                            96      
+000000B0  5281                      97      addi.l  #1, d1                             ** increment the width 
+Line 98 ERROR: Undefined symbol
+000000B2  2A2F BD16                 98      move.l  D2_OFFSET(sp),d5
+Line 99 ERROR: Undefined symbol
+000000B6  DAAF BD16                 99      add.l   D4_OFFSET(sp),d5
+Line 100 ERROR: Undefined symbol
+000000BA  2F41 55B8                100      move.l  d1, -CUR_DISPLAY_X(sp)
+000000BE  BA81                     101      cmp.l   d1, d5                             ** compare it to the width of the crop 
+000000C0  6ECA                     102      bgt     drawRow                            ** keep drawing until cur_width = crop_width
+000000C2                           103  incrementHeight:   
+Line 104 ERROR: Undefined symbol
+000000C2  2F6F BD16 55B8           104      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)
+000000C8  5382                     105      subi.l  #1, d2                             ** decrement the height 
+Line 106 ERROR: Undefined symbol
+000000CA  2F42 55B8                106      move.l  d2, -CUR_DISPLAY_Y(sp)
+000000CE                           107  
+000000CE                           108  **this skips the necesary number of bytes to get to the next location in memory to draw 
+000000CE                           109  **this is done by (Image_Width - Crop_width) * 4 
+000000CE                           110  **it then adds this offset to the pointer to pixel data, and jumps to draw function a (crop_height) amount of times 
+000000CE                           111  **d1 is used as a buffer to store temporary values for this calcualtion 
+000000CE                           112  skipBytes:
+000000CE  2A06                     113      move.l  d6, d5
+Line 114 ERROR: Undefined symbol
+000000D0  9AAF BD16                114      sub.l   D2_OFFSET(sp),d5
+000000D4  E58D                     115      lsl.l   #2, d5 
+000000D6  D5C5                     116      adda.l  d5, a2                             ** adds the offset as calculated above in skipBytes description to the pixel data pointer
+Line 117 ERROR: Undefined symbol
+000000D8  222F BD16                117      move.l  -LOOP_COUNTER(sp),d1
+000000DC  5381                     118      subi.l  #1, d1 
+Line 119 ERROR: Undefined symbol
+000000DE  2F41 55B8                119      move.l  d1, -LOOP_COUNTER(sp)
+000000E2  B2BC 00000000            120      cmp.l   #0, d1
+000000E8  6CA2                     121      bge     drawRow                            ** branch to drawRow as long as the loop counter doesnt reach 0  
+000000EA                           122  
+000000EA                           123  updateSpriteToDraw
+Line 124 ERROR: Undefined symbol
+000000EA  2F7C 00000000 55B8       124      move.l  #0,D0_OFFSET(sp)
+Line 125 ERROR: Undefined symbol
+000000F2  2C2F BD16                125      move.l  D6_OFFSET(sp),d6                  **
+000000F6  5286                     126      addi.l  #1, d6
+Line 127 ERROR: Undefined symbol
+000000F8  0C86 004DBD16            127      cmpi.l  #RUNNING_SPRITE_COUNT,d6 
+000000FE  6C00 000A                128      bge     resetSpriteCounter
+00000102                           129  incrementSpriteCounter:
+Line 130 ERROR: Undefined symbol
+00000102  2F46 55B8                130      move.l  d6, D6_OFFSET(sp) 
+00000106  6000 0008                131      bra     returnDrawPlayerSprite  
+0000010A                           132  resetSpriteCounter:
+0000010A  7C00                     133      move.l  #0, d6
+Line 134 ERROR: Undefined symbol
+0000010C  2F46 55B8                134      move.l  d6, D6_OFFSET(sp) 
+00000110                           135  returnDrawPlayerSprite:
+Line 136 ERROR: Undefined symbol
+00000110                           136      movem.l (sp)+, ALL_REG
+00000110  4E75                     137      rts                                        ** return, and reset the stack 
+00000112                           138  
+00000112                           139  
+Line 140 WARNING: END directive missing, starting address not set
+
+37 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+DIDNTSHIFTPLAYERBITS  1E
+DRAWPLAYERSPRITE    0
+DRAWROW             8C
+GETINITIALOFFSET    54
+INCREMENTHEIGHT     C2
+INCREMENTROW        6C
+INCREMENTSPRITECOUNTER  102
+RESETSPRITECOUNTER  10A
+RETURNDRAWPLAYERSPRITE  110
+SHIFTPLAYERBITS     18
+SKIPBYTES           CE
+STILLJUMPING        A
+UPDATESPRITETODRAW  EA

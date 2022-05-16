@@ -1,0 +1,96 @@
+00000000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/5/2021 4:59:32 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :UpdatePlayer 
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description: This subroutine changes the players sprite, and location on the screen 
+00000000                             6  * if the player is not jumping (checks keycode returned from getKeyboardInput) then run 
+00000000                             7  * through the sprite animation for running. If the player is jumping run the jumping player animation
+00000000                             8  * and change the position of the player by using projectile motion. 
+00000000                             9  *-----------------------------------------------------------
+00000000                            10  updatePlayerSprite:
+Line 11 ERROR: Undefined symbol
+00000000                            11      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00000000                            12      
+00000000                            13      ** move the players current position into the stack, to be accessed in the redrawBackground function
+Line 14 ERROR: Undefined symbol
+00000000  2F6F BD16 55B8            14      move.l  D4_OFFSET(sp),PLAYER_X_CROP(sp)
+Line 15 ERROR: Undefined symbol
+00000006  2F6F BD16 55B8            15      move.l  D5_OFFSET(sp),PLAYER_Y_CROP(sp)
+Line 16 ERROR: Undefined symbol
+0000000C  2F6F BD16 55B8            16      move.l  D2_OFFSET(sp),PLAYER_WIDTH(sp)
+Line 17 ERROR: Undefined symbol
+00000012  2F6F BD16 55B8            17      move.l  D3_OFFSET(sp),PLAYER_HEIGHT(sp)
+Line 18 ERROR: Undefined symbol
+00000018  2F6F BD16 55B8            18      move.l  D4_OFFSET(sp),PLAYER_X_DISPLAY(sp)
+Line 19 ERROR: Undefined symbol
+0000001E  2F6F BD16 55B8            19      move.l  D5_OFFSET(sp),PLAYER_Y_DISPLAY(sp)
+00000024                            20  
+00000024                            21      ;move.l  KEYCODE_VALUE(sp), d1 
+00000024                            22      ;andi.l  #$FF, d1 
+00000024                            23      ;bne     jumping
+00000024                            24  
+00000024                            25  ** change the sprite every frame to make it look like the player is running 
+00000024                            26  running: 
+Line 27 ERROR: Undefined symbol
+00000024  202F BD16                 27      move.l  D6_OFFSET(sp),d0
+00000028  7200                      28      move.l  #0,d1 
+Line 29 ERROR: Undefined symbol
+0000002A  242F BD16                 29      move.l  D2_OFFSET(sp),d2 
+0000002E                            30      
+0000002E  C4C0                      31      mulu    d0,d2
+00000030  D282                      32      add.l   d2,d1
+Line 33 ERROR: Undefined symbol
+00000032  2F41 55B8                 33      move.l  d1,D0_OFFSET(sp)
+Line 34 ERROR: Undefined symbol
+00000036  2F41 55B8                 34      move.l  d1,PLAYER_SPRITE_X_CROP(sp)
+0000003A  6000 002E                 35      bra     returnUpdatePlayerSprite
+0000003E                            36  
+0000003E                            37  ;p(t) = p(0) + v(0)t + a*t^2/2
+0000003E                            38  ; set some value to 1 if it reaches here, and check if that value in the draw player function to start a jumping animation
+0000003E                            39  ;
+0000003E                            40  jumping:
+Line 41 ERROR: Undefined symbol
+0000003E  2F7C 00000001 55B8        41      move.l  #1, IS_JUMPING(sp)
+Line 42 ERROR: Undefined symbol
+00000046  202F BD16                 42      move.l  D5_OFFSET(sp),d0
+Line 43 ERROR: Undefined symbol
+0000004A  222F BD16                 43      move.l  (CUR_PLAYER_VELOCITY)(sp), d1 
+0000004E  9081                      44      sub.l   d1,d0
+00000050                            45       
+Line 46 ERROR: Undefined symbol
+00000050  243C 004DBD16             46      move.l  #GRAVITY, d2
+00000056  9282                      47      sub.l   d2, d1
+00000058  2601                      48      move.l  d1, d3 
+0000005A  E08B                      49      lsr.l   #8, d3
+0000005C  9283                      50      sub.l   d3, d1
+Line 51 ERROR: Undefined symbol
+0000005E  2F41 55B8                 51      move.l  d1, (CUR_PLAYER_VELOCITY)(sp) 
+00000062                            52  
+00000062                            53  
+Line 54 ERROR: Undefined symbol
+00000062  2F40 55B8                 54      move.l  d0, D5_OFFSET(sp)
+Line 55 ERROR: Undefined symbol
+00000066  2F40 55B8                 55      move.l  d0,PLAYER_SPRITE_Y_DISPLAY(sp)
+0000006A                            56      
+0000006A                            57      **use this space to change the players sprite while jumping...possibly skipping frames for some of the animations. 
+0000006A                            58  returnUpdatePlayerSprite
+Line 59 ERROR: Undefined symbol
+0000006A                            59      movem.l (sp)+, ALL_REG
+0000006A  4E75                      60      rts                                        ** return, and reset the stack 
+Line 61 WARNING: END directive missing, starting address not set
+
+19 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+JUMPING             3E
+RETURNUPDATEPLAYERSPRITE  6A
+RUNNING             24
+UPDATEPLAYERSPRITE  0

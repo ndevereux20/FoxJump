@@ -1,0 +1,261 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/4/2021 2:16:33 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : DrawBackground
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description: Draws the initial background 
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  ALL_REG         REG     D0-D7/A0-A6
+00000000  =00000000                  8  D0_OFFSET       EQU     0
+00000000  =00000004                  9  D1_OFFSET       EQU     4
+00000000  =00000008                 10  D2_OFFSET       EQU     8
+00000000  =0000000C                 11  D3_OFFSET       EQU     12
+00000000  =00000010                 12  D4_OFFSET       EQU     16
+00000000  =00000014                 13  D5_OFFSET       EQU     20
+00000000  =00000018                 14  D6_OFFSET       EQU     24
+00000000  =0000001C                 15  D7_OFFSET       EQU     28
+00000000  =00000020                 16  A0_OFFSET       EQU     32
+00000000  =00000024                 17  A1_OFFSET       EQU     36
+00000000  =00000028                 18  A2_OFFSET       EQU     40
+00000000  =0000002C                 19  A3_OFFSET       EQU     44
+00000000  =00000030                 20  A4_OFFSET       EQU     48  
+00000000  =00000034                 21  A5_OFFSET       EQU     52
+00000000  =00000038                 22  A6_OFFSET       EQU     56
+00000000                            23  
+00000000                            24  ** used in the draw bitmap function for local variables 
+00000000  =00000004                 25  CUR_DISPLAY_X      EQU     4
+00000000  =00000008                 26  CUR_DISPLAY_Y      EQU     8
+00000000  =0000000C                 27  LOOP_COUNTER       EQU     12
+00000000  =00000004                 28  ERROR_COUNTER_OFFSET      EQU     4
+00000000                            29  
+00000000                            30  ** used as constants to offsets from the start of the .bmp header file to important info 
+00000000  =00000002                 31  OFFSET_TO_FILE_SIZE     EQU     2
+00000000  =00000012                 32  OFFSET_TO_IMAGE_WIDTH   EQU     18
+00000000  =00000016                 33  OFFSET_TO_IMAGE_HEIGHT  EQU     22 
+00000000  =0000000A                 34  OFFSET_TO_IMAGE_OFFSET  EQU     10
+00000000  =0000001C                 35  OFFSET_TO_IMAGE_BIT_DEPTH   EQU     28
+00000000                            36  
+00000000                            37  ** used for checks that it is the right type of file 
+00000000  =00000020                 38  BIT_DEPTH                EQU     $20 
+00000000  =0000424D                 39  BMP_FILE_TYPE            EQU     $424D
+00000000                            40  
+00000000                            41  ** trap code commands for drawing on the screen  
+00000000  =00000051                 42  FILL_COLOR_TRAP__CODE   EQU     81
+00000000  =00000050                 43  PEN_COLOR_TRAP_CODE     EQU     80
+00000000  =00000052                 44  DRAW_PIXEL_TRAP_CODE    EQU     82
+00000000  =00000021                 45  SET_OUTPUT_RESOLUTION_TRAP_CODE EQU     33 
+00000000  =0000005E                 46  REPAINT_SCREEN_TRAP_CODE    EQU     94
+00000000  =0000000B                 47  CLEAR_SCREEN_COMMAND    EQU     11
+00000000  =0000005C                 48  DRAWING_MODE_TRAP_CODE  EQU 92
+00000000  =00000011                 49  DOUBLE_BUFFERED_MODE    EQU 17
+00000000  =00000057                 50  DRAW_RECTANGLE_COMMAND      EQU     87 
+00000000                            51  
+00000000                            52  ** keyboard values and trap code 
+00000000  =00000013                 53  USER_INPUT_TRAP_CODE    EQU     19
+00000000  =00000020                 54  KEY_SPACE_INPUT         EQU     $20
+00000000                            55  
+00000000                            56  
+00000000  =0000FF00                 57  CLEAR_SCREEN_MAGIC_VAL  EQU     $FF00
+00000000                            58  
+00000000                            59  ** new line and reset position values 
+00000000  =0000000D                 60  CR      EQU     $0D
+00000000  =0000000A                 61  LF      EQU     $0A
+00000000                            62  
+00000000                            63  ** display window info 
+00000000  =00000280                 64  DISPLAY_WINDOW_WIDTH    EQU     640   
+00000000  =000001E0                 65  DISPLAY_WINDOW_HEIGHT   EQU     480
+00000000                            66  
+00000000                            67  ** player variables 
+00000000  =00808000                 68  SPRITE_BACKGROUND_COLOR     EQU     $808000
+00000000  =00000006                 69  RUNNING_SPRITE_COUNT        EQU     $6
+00000000  =0000001E                 70  JUMP_VELOCITY       EQU     30 
+00000000  =FFFFFFF6                 71  GRAVITY             EQU     -10
+00000000  =0000002D                 72  MAX_HEIGHT          EQU     45          ; changes based on the players velocity and gravity of the world 
+00000000                            73  ** solving for height: y = v^2/ 2g = 30^2/ 2 * 10  =  45
+00000000                            74  ** time to reach that height: t = v/g = 3 
+00000000                            75  ** velocity at t = 1 -> v(1) = -10 * 1 + 30 = 20 
+00000000                            76  ** velocity at t = 2 -> v(2) = -10 * 2 + 30 = 10 
+00000000                            77  ** velocity at t = 3 -> v(3) = -10 * 3 + 30 = 0 
+00000000                            78  ** etc..
+00000000                            79  ** position at t = 1 -> p(t) = p(0) + v(0)t + a*t^2/2  -> p(1) = 0 + 30(1) + -10 * 1/2 = 30 - 5  = 25 
+00000000                            80  ** position at t = 2 -> p(2) = 0 + 30(2) - 10*4/2 = 40 
+00000000                            81  ** position at t = 3 -> p(3) = 0 + 30(3) - 10 *9/2 = 45
+00000000                            82  ** position at t = 4 -> p(4) = 0 + 30(4) - 10 *16/2 = 40 
+00000000                            83  ** position at t = 5 -> p(5) = 0 + 30(5) - 10 *25/2 = 25 
+00000000                            84  ** position at t = 6 -> p(6) = 0 + 30(6) - 10 *36/2 = 0 
+00000000                            85  
+00000000                            86  drawBackground 
+00000000  48E7 FFFE                 87      movem.l ALL_REG, -(sp)                      ** load the paramaters onto the stack 
+00000004                            88     
+00000004  2F6F 0010 FFFC            89      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)    ** moves the starting width into the stack (bottom left) 
+0000000A  202F 0014                 90      move.l  D5_OFFSET(sp),d0
+0000000E  D0AF 000C                 91      add.l   D3_OFFSET(sp),d0
+00000012  2F40 FFF8                 92      move.l  d0, -CUR_DISPLAY_Y(sp)              ** moves the starting height into the stack (bottom left)
+00000016  2F6F 000C FFF4            93      move.l  D3_OFFSET(sp),-LOOP_COUNTER(sp)     ** initialize the loop counter to be the height of the crop 
+0000001C                            94    
+0000001C  2629 0012                 95      move.l  OFFSET_TO_IMAGE_WIDTH(a1),d3        ** 18 is the offset in the header file for the width of the image 
+00000020  E15B                      96      rol.w   #8, d3                              ** Little Endian swap
+00000022  4843                      97      swap.w  d3 
+00000024  E15B                      98      rol.w   #8, d3      
+00000026                            99  
+00000026  2829 0016                100      move.l  OFFSET_TO_IMAGE_HEIGHT(a1),d4       ** 22 is the offset in the header file for the height of the image 
+0000002A  E15C                     101      rol.w   #8, d4                              ** Little Endian Swap
+0000002C  4844                     102      swap.w  d4 
+0000002E  E15C                     103      rol.w   #8, d4      
+00000030                           104      
+00000030  2A29 000A                105      move.l  OFFSET_TO_IMAGE_OFFSET(a1),d5       ** 10 is the offset to the header location that stores the offset to the start of the pixel data from the start of the header
+00000034  E15D                     106      rol.w   #8, d5                              ** Little Endian Swap
+00000036  4845                     107      swap.w  d5
+00000038  E15D                     108      rol.w   #8, d5
+0000003A  DA89                     109      add.l   a1, d5
+0000003C  2645                     110      move.l  d5, a3                              **a2 is a pointer to the start of the pixel data (bottom left corner)
+0000003E                           111           
+0000003E  2C03                     112      move.l  d3, d6               
+00000040  2E04                     113      move.l  d4, d7               
+00000042  7A00                     114      move.l  #0, d5               
+00000044                           115  **jumps to the bottom left corner of the bitmap chunk to be drawn in memory by getting the offset in bytes 
+00000044                           116  **or in terms of coordinates...this is (x = crop_x, y = crop_y + crop_height) 
+00000044                           117  **this is done by: (((Image_Height - (crop_y + crop_height)) * Image_Width) + crop_x) * 4 
+00000044                           118  *d5 is used as a buffer to store temporary values for this calcualtion 
+00000044                           119  getInitialBackgroundOffset: 
+00000044  DAAF 0004                120      add.l   D1_OFFSET(sp),d5 
+00000048  DAAF 000C                121      add.l   D3_OFFSET(sp),d5 
+0000004C  9E85                     122      sub.l   d5, d7
+0000004E  CEC3                     123      mulu    d3, d7 
+00000050  DEAF 0000                124      add.l   D0_OFFSET(sp),d7
+00000054  E58F                     125      lsl.l   #2, d7                             ** multiply by 4 by shifting it to the left by 4 bits 
+00000056  D7C7                     126      adda.l  d7, a3                             ** adds the offset to the pointer
+00000058                           127        
+00000058                           128  **now that we are pointing to the bottom row of pixel data to be drawn.
+00000058                           129  **set the pen color for each pixel. 
+00000058                           130  **then draw at the appropriate location on the screen (as desired by the user)
+00000058                           131  **it draws until it reaches the end of the row, then decrements the height and jumps down to 'skipBytes'
+00000058                           132  *d5 is used for checking if we are done drawing the row 
+00000058                           133  drawBackgroundRow: 
+00000058  221B                     134      move.l  (a3)+, d1                          ** move the first byte into memory 
+0000005A  E089                     135      lsr.l   #8, d1                             ** shift to trash the alpha (00 BB GG RR format) 
+0000005C  7050                     136      move.l  #PEN_COLOR_TRAP_CODE,d0            ** make that pen color 
+0000005E  4E4F                     137      trap    #15
+00000060                           138      
+00000060  222F FFFC                139      move.l  -CUR_DISPLAY_X(sp),d1              ** get the current width and height (of the display), draw at that location
+00000064  242F FFF8                140      move.l  -CUR_DISPLAY_Y(sp),d2
+00000068  7052                     141      move.l  #DRAW_PIXEL_TRAP_CODE, d0
+0000006A  4E4F                     142      trap    #15
+0000006C                           143      
+0000006C  5281                     144      addi.l  #1, d1                             ** increment the width 
+0000006E  2A2F 0008                145      move.l  D2_OFFSET(sp),d5
+00000072  DAAF 0010                146      add.l   D4_OFFSET(sp),d5
+00000076  2F41 FFFC                147      move.l  d1, -CUR_DISPLAY_X(sp)
+0000007A  BA81                     148      cmp.l   d1, d5                             ** compare it to the width of the crop 
+0000007C  6EDA                     149      bgt     drawBackgroundRow                            ** keep drawing until cur_width = crop_width
+0000007E                           150      
+0000007E  2F6F 0010 FFFC           151      move.l  D4_OFFSET(sp),-CUR_DISPLAY_X(sp)
+00000084  5382                     152      subi.l  #1, d2                             ** decrement the height 
+00000086  2F42 FFF8                153      move.l  d2, -CUR_DISPLAY_Y(sp)
+0000008A                           154  
+0000008A                           155  **this skips the necesary number of bytes to get to the next location in memory to draw 
+0000008A                           156  **this is done by (Image_Width - Crop_width) * 4 
+0000008A                           157  **it then adds this offset to the pointer to pixel data, and jumps to draw function a (crop_height) amount of times 
+0000008A                           158  **d1 is used as a buffer to store temporary values for this calcualtion 
+0000008A                           159  skipBackgroundBytes:
+0000008A  2A06                     160      move.l  d6, d5
+0000008C  9AAF 0008                161      sub.l   D2_OFFSET(sp),d5
+00000090  E58D                     162      lsl.l   #2, d5 
+00000092  D7C5                     163      adda.l  d5, a3                             ** adds the offset as calculated above in skipBytes description to the pixel data pointer
+00000094  222F FFF4                164      move.l  -LOOP_COUNTER(sp),d1
+00000098  5381                     165      subi.l  #1, d1 
+0000009A  2F41 FFF4                166      move.l  d1, -LOOP_COUNTER(sp)
+0000009E  B2BC 00000000            167      cmp.l   #0, d1
+000000A4  6CB2                     168      bge     drawBackgroundRow                            ** branch to drawRow as long as the loop counter doesnt reach 0  
+000000A6                           169  
+000000A6  4CDF 7FFF                170      movem.l (sp)+, ALL_REG
+000000AA  4E75                     171      rts                                        ** return, and reset the stack 
+000000AC                           172  
+00001000                           173  START    ORG    $1000
+00001000  43F9 0000102C            174      lea     background, a1
+00001006                           175      ** draw the background intitial paramaters
+00001006  7000                     176      move.l  #0, d0
+00001008  7200                     177      move.l  #0, d1
+0000100A  243C 00000280            178      move.l  #DISPLAY_WINDOW_WIDTH, d2
+00001010  263C 000001E0            179      move.l  #DISPLAY_WINDOW_HEIGHT, d3
+00001016  7800                     180      move.l  #0, d4
+00001018  7A00                     181      move.l  #0, d5
+0000101A                           182      
+0000101A  4EB8 0000                183      jsr     drawBackground
+0000101E                           184      
+0000101E  1038 0009                185      move.b  $9,d0            *halts similation
+00001022  4E4F                     186      trap #15
+00001024                           187          
+00001024  4E72 2000                188      STOP #$2000
+00001028                           189             
+00001028                           190  
+00001028  FFFF FFFF                191      SIMHALT   
+0000102C                           192  
+0000102C                           193  background  INCBIN      "Background.bmp"
+0012D062                           194  
+0012D062                           195      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+A0_OFFSET           20
+A1_OFFSET           24
+A2_OFFSET           28
+A3_OFFSET           2C
+A4_OFFSET           30
+A5_OFFSET           34
+A6_OFFSET           38
+ALL_REG             7FFF
+BACKGROUND          102C
+BIT_DEPTH           20
+BMP_FILE_TYPE       424D
+CLEAR_SCREEN_COMMAND  B
+CLEAR_SCREEN_MAGIC_VAL  FF00
+CR                  D
+CUR_DISPLAY_X       4
+CUR_DISPLAY_Y       8
+D0_OFFSET           0
+D1_OFFSET           4
+D2_OFFSET           8
+D3_OFFSET           C
+D4_OFFSET           10
+D5_OFFSET           14
+D6_OFFSET           18
+D7_OFFSET           1C
+DISPLAY_WINDOW_HEIGHT  1E0
+DISPLAY_WINDOW_WIDTH  280
+DOUBLE_BUFFERED_MODE  11
+DRAWBACKGROUND      0
+DRAWBACKGROUNDROW   58
+DRAWING_MODE_TRAP_CODE  5C
+DRAW_PIXEL_TRAP_CODE  52
+DRAW_RECTANGLE_COMMAND  57
+ERROR_COUNTER_OFFSET  4
+FILL_COLOR_TRAP__CODE  51
+GETINITIALBACKGROUNDOFFSET  44
+GRAVITY             FFFFFFF6
+JUMP_VELOCITY       1E
+KEY_SPACE_INPUT     20
+LF                  A
+LOOP_COUNTER        C
+MAX_HEIGHT          2D
+OFFSET_TO_FILE_SIZE  2
+OFFSET_TO_IMAGE_BIT_DEPTH  1C
+OFFSET_TO_IMAGE_HEIGHT  16
+OFFSET_TO_IMAGE_OFFSET  A
+OFFSET_TO_IMAGE_WIDTH  12
+PEN_COLOR_TRAP_CODE  50
+REPAINT_SCREEN_TRAP_CODE  5E
+RUNNING_SPRITE_COUNT  6
+SET_OUTPUT_RESOLUTION_TRAP_CODE  21
+SKIPBACKGROUNDBYTES  8A
+SPRITE_BACKGROUND_COLOR  808000
+START               1000
+USER_INPUT_TRAP_CODE  13

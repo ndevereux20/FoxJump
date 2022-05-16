@@ -1,0 +1,428 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/13/2021 2:57:43 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  ** global values 
+00000000                             8  ** offset to reisters when passed to the stack 
+00000000                             9  ALL_REG         REG     D0-D7/A0-A6
+00000000  =00000000                 10  D0_OFFSET       EQU     0
+00000000  =00000004                 11  D1_OFFSET       EQU     4
+00000000  =00000008                 12  D2_OFFSET       EQU     8
+00000000  =0000000C                 13  D3_OFFSET       EQU     12
+00000000  =00000010                 14  D4_OFFSET       EQU     16
+00000000  =00000014                 15  D5_OFFSET       EQU     20
+00000000  =00000018                 16  D6_OFFSET       EQU     24
+00000000  =0000001C                 17  D7_OFFSET       EQU     28
+00000000  =00000020                 18  A0_OFFSET       EQU     32
+00000000  =00000024                 19  A1_OFFSET       EQU     36
+00000000  =00000028                 20  A2_OFFSET       EQU     40
+00000000  =0000002C                 21  A3_OFFSET       EQU     44
+00000000  =00000030                 22  A4_OFFSET       EQU     48  
+00000000  =00000034                 23  A5_OFFSET       EQU     52
+00000000  =00000038                 24  A6_OFFSET       EQU     56
+00000000                            25  
+00000000                            26  ** used in the draw bitmap function for local variables 
+00000000  =00000004                 27  CUR_DISPLAY_X      EQU     4
+00000000  =00000008                 28  CUR_DISPLAY_Y      EQU     8
+00000000  =0000000C                 29  LOOP_COUNTER       EQU     12
+00000000  =00000004                 30  ERROR_COUNTER_OFFSET      EQU     4
+00000000                            31  
+00000000                            32  ** used as constants to offsets from the start of the .bmp header file to important info 
+00000000  =00000002                 33  OFFSET_TO_FILE_SIZE     EQU     2
+00000000  =00000012                 34  OFFSET_TO_IMAGE_WIDTH   EQU     18
+00000000  =00000016                 35  OFFSET_TO_IMAGE_HEIGHT  EQU     22 
+00000000  =0000000A                 36  OFFSET_TO_IMAGE_OFFSET  EQU     10
+00000000  =0000001C                 37  OFFSET_TO_IMAGE_BIT_DEPTH   EQU     28
+00000000                            38  
+00000000                            39  ** used for checks that it is the right type of file 
+00000000  =00000020                 40  BIT_DEPTH                EQU     $20 
+00000000  =0000424D                 41  BMP_FILE_TYPE            EQU     $424D
+00000000                            42  
+00000000                            43  ** trap code commands for drawing on the screen  
+00000000  =00000051                 44  FILL_COLOR_TRAP__CODE   EQU     81
+00000000  =00000050                 45  PEN_COLOR_TRAP_CODE     EQU     80
+00000000  =00000052                 46  DRAW_PIXEL_TRAP_CODE    EQU     82
+00000000  =00000021                 47  SET_OUTPUT_RESOLUTION_TRAP_CODE EQU     33 
+00000000  =0000005E                 48  REPAINT_SCREEN_TRAP_CODE    EQU     94
+00000000  =0000000B                 49  CLEAR_SCREEN_COMMAND    EQU     11
+00000000  =0000005C                 50  DRAWING_MODE_TRAP_CODE  EQU 92
+00000000  =00000011                 51  DOUBLE_BUFFERED_MODE    EQU 17
+00000000  =00000057                 52  DRAW_RECTANGLE_COMMAND      EQU     87 
+00000000                            53  
+00000000                            54  ** keyboard values and trap code 
+00000000  =00000013                 55  USER_INPUT_TRAP_CODE    EQU     19
+00000000  =00000020                 56  KEY_SPACE_INPUT         EQU     $20
+00000000                            57  
+00000000                            58  
+00000000  =0000FF00                 59  CLEAR_SCREEN_MAGIC_VAL  EQU     $FF00
+00000000                            60  
+00000000                            61  ** new line and reset position values 
+00000000  =0000000D                 62  CR      EQU     $0D
+00000000  =0000000A                 63  LF      EQU     $0A
+00000000                            64  
+00000000                            65  ** display window info 
+00000000  =00000280                 66  DISPLAY_WINDOW_WIDTH    EQU     640   
+00000000  =000001E0                 67  DISPLAY_WINDOW_HEIGHT   EQU     480
+00000000                            68  
+00000000                            69  ** player variables 
+00000000  =00808000                 70  SPRITE_BACKGROUND_COLOR     EQU     $808000
+00000000  =00000006                 71  RUNNING_SPRITE_COUNT        EQU     $6
+00000000  =00000014                 72  JUMP_VELOCITY       EQU     20
+00000000  =FFFFFF52                 73  GRAVITY             EQU     -174
+00000000                            74  
+00000000                            75  
+00000000                            76  ** Offset to keycode value 
+00000000  =00000040                 77  KEYCODE_VALUE       EQU     64
+00000000                            78  
+00000000                            79  ** players current position and chunk size to redraw background at 
+00000000  =00000044                 80  PLAYER_X_CROP       EQU     68
+00000000  =00000048                 81  PLAYER_Y_CROP       EQU     72
+00000000  =0000004C                 82  PLAYER_WIDTH        EQU     76
+00000000  =00000054                 83  PLAYER_X_DISPLAY    EQU     84
+00000000  =00000058                 84  PLAYER_Y_DISPLAY    EQU     88
+00000000                            85  
+00000000                            86  *current location to crop at on the player sprite sheet to run through animations. 
+00000000  =0000005C                 87  PLAYER_SPRITE_X_CROP   EQU     92
+00000000  =00000060                 88  PLAYER_SPRITE_Y_CROP   EQU     96
+00000000  =00000064                 89  PLAYER_SPRITE_WIDTH    EQU     100
+00000000  =00000068                 90  PLAYER_SPRITE_HEIGHT   EQU     104
+00000000  =0000006C                 91  PLAYER_SPRITE_X_DISPLAY    EQU     108
+00000000  =00000070                 92  PLAYER_SPRITE_Y_DISPLAY    EQU     112
+00000000                            93  
+00000000                            94  
+00000000  =00000074                 95  PLAYER_SPRITE_SHEET_POINTER    EQU     116
+00000000  =00000078                 96  BACKGROUND_SPRITE_SHEET_POINTER     EQU     120
+00000000                            97  
+00000000  =0000007C                 98  CUR_PLAYER_VELOCITY     EQU     124
+00000000  =00000080                 99  CUR_PLAYER_CHANGE_IN_VELOCITY   EQU 128
+00000000  =00000084                100  IS_JUMPING      EQU     132
+00000000                           101  
+00000000  =00000088                102  RANDOM_VALUE    EQU     136
+00000000                           103  
+00000000                           104  ** Offsets for moving objects
+00000000  =0000008C                105  OBJECT_3_X_CROP     EQU     140
+00000000  =00000090                106  OBJECT_3_Y_CROP     EQU     144
+00000000  =00000094                107  OBJECT_3_WIDTH    EQU     148   
+00000000  =00000098                108  OBJECT_3_HEIGHT   EQU     152
+00000000  =0000009C                109  OBJECT_3_X_DISPLAY     EQU     156
+00000000  =000000A0                110  OBJECT_3_Y_DISPLAY     EQU     160
+00000000                           111  
+00000000  =000000A4                112  OBJECT_2_X_CROP     EQU     164
+00000000  =000000A8                113  OBJECT_2_Y_CROP     EQU     168
+00000000  =000000AC                114  OBJECT_2_WIDTH    EQU     172 
+00000000  =000000B0                115  OBJECT_2_HEIGHT   EQU     176
+00000000  =000000B4                116  OBJECT_2_X_DISPLAY     EQU     180
+00000000  =000000B8                117  OBJECT_2_Y_DISPLAY     EQU     184
+00000000                           118      
+00000000  =000000BC                119  OBJECT_1_X_CROP     EQU     188
+00000000  =000000C0                120  OBJECT_1_Y_CROP     EQU     192
+00000000  =000000C4                121  OBJECT_1_WIDTH    EQU     196 
+00000000  =000000C8                122  OBJECT_1_HEIGHT   EQU     200
+00000000  =000000CC                123  OBJECT_1_X_DISPLAY     EQU     204
+00000000  =000000D0                124  OBJECT_1_Y_DISPLAY     EQU     208
+00000000                           125  
+00000000  =000000D4                126  OBSTICLES_SPRITE_SHEET_POINTER     EQU     212
+00000000                           127  
+00000000  =000000D8                128  DESTROY_OBJECT_BOOL     EQU     216
+00000000                           129  
+00000000  =000000DC                130  SCORE       EQU     220
+00000000  =000000E0                131  SCORE_ADDED_BOOL    EQU     224
+00000000                           132  
+00000000                           133  ;1sCOUNTER   EQU     228
+00000000                           134  ;10sCOUNTER  EQU     232
+00000000                           135  
+00000000  =000000AC                136  STACK_POINTER_OFFSET    EQU     172      ** how much offset to add to the stack pointer for passing in paramaters onto the stack
+00000000  =00000040                137  REGISTERS_OFFSET        EQU     64      ** register offset while in main
+00000000  =0000003C                138  REGISTERS_OFFSET_2      EQU     60      ** register offset for putPlayerSpriteInRegisters and putPlayerCropLocationInRegisters, because it includes the PC
+00000000                           139  ** moving object variables 
+00000000  =0000001E                140  OBJECT_VELOCITY     EQU     30
+00000000  =0000000A                141  FRAMES_SKIP_TO_DRAW     EQU    10
+00000000  =00000006                142  DRAW_PARAMETERS     EQU     6
+00000000                           143  
+00000000  =00000002                144  PEN_WIDTH       EQU     2 
+00000000  =0000005D                145  PEN_WIDTH_TRAP_CODE     EQU     93 
+00000000  =00000054                146  DRAW_LINE_TRAP_CODE     EQU     84 
+00000000                           147  
+00000000  =00000000                148  OBSTICLE_BACKGROUND_COLOR   EQU     $00000000
+00000000                           149  
+00000000                           150  ** moving objects color 
+00000000  =00FFFFFF                151  WHITE           equ $00FFFFFF
+00000000                           152  
+00001000                           153  START    ORG    $1000
+00001000                           154      ;move.l      #0, (1sCOUNTER - REGISTERS_OFFSET)(sp)
+00001000                           155      ;move.l      #0, (10sCOUNTER - REGISTERS_OFFSET)(sp)
+00001000  2C3C 000000AC            156      move.l  #STACK_POINTER_OFFSET, d6         ; make room for the objects position on the stack 
+00001006  9FC6                     157      sub.l   d6, sp
+00001008                           158      
+00001008  4EB9 000010F4            159      jsr         clearScreen
+0000100E  2F7C 00000063 009C       160      move.l      #99, (SCORE - REGISTERS_OFFSET)(sp)
+00001016  4EB9 00001026            161      jsr         sevenSegment 
+0000101C                           162      
+0000101C                           163  stop: 
+0000101C  1038 0009                164      move.b  $9,d0            *halts similation
+00001020  4E4F                     165      trap #15
+00001022                           166          
+00001022  4E72 2000                167      STOP #$2000
+00001026                           168  ******************************************************************
+00001026                           169  sevenSegment:
+00001026  48E7 FFFE                170      movem.l ALL_REG, -(sp)
+0000102A                           171      
+0000102A  41F9 0000110E            172      lea     bitmaskTable, a0  
+00001030  45F9 00001150            173      lea     drawLocations10s, a2 
+00001036                           174     
+00001036  202F 00DC                175      move.l  SCORE(sp),d0 
+0000103A  2200                     176      move.l  d0, d1 
+0000103C  82FC 000A                177      divu    #10, d1 
+00001040  3401                     178      move.w  d1, d2          ;; 10's digit 
+00001042  4841                     179      swap.w  d1
+00001044  3601                     180      move.w  d1, d3          ;; remainder or 1's digit  
+00001046                           181  offsetTo1Digit:
+00001046  D1C3                     182      add.l   d3, a0 
+00001048  1810                     183      move.b  (a0),d4                ;; moves the mask of the 1's value 
+0000104A  7E00                     184      move.l  #0, d7                  ;; loop counter 
+0000104C                           185  loop1sDigit:
+0000104C  1004                     186      move.b  d4, d0 
+0000104E  0200 0001                187      andi.b  #1, d0
+00001052  6700 0008                188      beq     skip1sDraw
+00001056  4EB9 00001098            189      jsr     draw1s7Segment
+0000105C                           190  skip1sDraw: 
+0000105C  E20C                     191      lsr.b   #1, d4 
+0000105E  5287                     192      add.l   #1, d7 
+00001060  0C87 00000007            193      cmpi.l  #7, d7
+00001066  6DE4                     194      blt     loop1sDigit 
+00001068                           195  ******************************************** 10's    
+00001068                           196  offsetTo10sDigit:
+00001068  41F9 0000110E            197      lea     bitmaskTable, a0 
+0000106E  D1C2                     198      add.l   d2, a0
+00001070  4284                     199      clr.l   d4
+00001072  1810                     200      move.b  (a0),d4
+00001074  7E00                     201      move.l  #0, d7
+00001076                           202  loop10sDigit: 
+00001076  1004                     203      move.b  d4, d0 
+00001078  0200 0001                204      andi.b  #1, d0
+0000107C  6700 0008                205      beq     skip10sDraw
+00001080  4EB9 000010C6            206      jsr     draw10s7Segment
+00001086                           207  skip10sDraw: 
+00001086  E20C                     208      lsr.b   #1, d4 
+00001088  5287                     209      add.l   #1, d7 
+0000108A  0C87 00000007            210      cmpi.l  #7, d7
+00001090  6DE4                     211      blt     loop10sDigit    
+00001092                           212  
+00001092  4CDF 7FFF                213      movem.l (sp)+, ALL_REG
+00001096  4E75                     214      rts   
+00001098                           215  ********************************************** DRAW
+00001098                           216  draw1s7Segment:
+00001098  48E7 FFFE                217      movem.l ALL_REG, -(sp)
+0000109C  43F9 00001118            218      lea     drawLocations1s, a1 
+000010A2  2C07                     219      move.l  d7, d6 
+000010A4  CCFC 0008                220      mulu    #8, d6
+000010A8  D3C6                     221      add.l   d6, a1
+000010AA                           222      
+000010AA  123C 0002                223      move.b  #PEN_WIDTH, d1
+000010AE  103C 005D                224      move.b  #PEN_WIDTH_TRAP_CODE, d0 
+000010B2  4E4F                     225      trap    #15 
+000010B4  3219                     226      move.w  (a1)+, d1 
+000010B6  3419                     227      move.w  (a1)+, d2 
+000010B8  3619                     228      move.w  (a1)+, d3 
+000010BA  3811                     229      move.w  (a1),d4
+000010BC  7054                     230      move.l  #DRAW_LINE_TRAP_CODE, d0 
+000010BE  4E4F                     231      trap    #15 
+000010C0                           232      
+000010C0  4CDF 7FFF                233      movem.l (sp)+, ALL_REG
+000010C4  4E75                     234      rts  
+000010C6                           235  
+000010C6                           236  draw10s7Segment:
+000010C6  48E7 FFFE                237      movem.l ALL_REG, -(sp)
+000010CA  43F9 00001150            238      lea     drawLocations10s, a1 
+000010D0  2C07                     239      move.l  d7, d6 
+000010D2  CCFC 0008                240      mulu    #8, d6
+000010D6  D3C6                     241      add.l   d6, a1
+000010D8                           242      
+000010D8  123C 0002                243      move.b  #PEN_WIDTH, d1
+000010DC  103C 005D                244      move.b  #PEN_WIDTH_TRAP_CODE, d0 
+000010E0  4E4F                     245      trap    #15 
+000010E2  3219                     246      move.w  (a1)+, d1 
+000010E4  3419                     247      move.w  (a1)+, d2 
+000010E6  3619                     248      move.w  (a1)+, d3 
+000010E8  3811                     249      move.w  (a1),d4
+000010EA  7054                     250      move.l  #DRAW_LINE_TRAP_CODE, d0 
+000010EC  4E4F                     251      trap    #15 
+000010EE                           252      
+000010EE  4CDF 7FFF                253      movem.l (sp)+, ALL_REG
+000010F2  4E75                     254      rts  
+000010F4                           255  clearScreen:
+000010F4  48E7 FFFE                256      movem.l ALL_REG, -(sp)
+000010F8  103C 000B                257      move.b  #CLEAR_SCREEN_COMMAND,d0
+000010FC  223C 0000FF00            258      move.l  #CLEAR_SCREEN_MAGIC_VAL,d1
+00001102  4E4F                     259      TRAP    #15  
+00001104  4CDF 7FFF                260      movem.l (sp)+, ALL_REG
+00001108  4E75                     261      rts  
+0000110A                           262  
+0000110A                           263  
+0000110A                           264             
+0000110A                           265  
+0000110A  FFFF FFFF                266      SIMHALT  
+0000110E                           267                             ;0ABCDEFG        ;NUMBER
+0000110E= 7E                       268  bitmaskTable        dc.b    %01111110        ;0
+0000110F= 30                       269                      dc.b    %00110000        ;1
+00001110= 6D                       270                      dc.b    %01101101        ;2
+00001111= 79                       271                      dc.b    %01111001        ;3
+00001112= 33                       272                      dc.b    %00110011        ;4
+00001113= 5B                       273                      dc.b    %01011011        ;5
+00001114= 5F                       274                      dc.b    %01011111        ;6
+00001115= 70                       275                      dc.b    %01110000        ;7
+00001116= 7F                       276                      dc.b    %01111111        ;8
+00001117= 73                       277                      dc.b    %01110011        ;9
+00001118                           278  ; width of 10 (or 5?)
+00001118                           279  ; length of 10               x1, y1;  x2, y2     ;LETTER
+00001118= 026C 001E 0276 001E      280  drawLocations1s     dc.w    620, 30, 630, 30    ;G 
+00001120= 026C 001E 026C 0014      281                      dc.w    620, 30, 620, 20    ;F 
+00001128= 026C 0028 026C 001E      282                      dc.w    620, 40, 620, 30    ;E 
+00001130= 0276 0028 026C 0028      283                      dc.w    630, 40, 620, 40    ;D
+00001138= 0276 001E 0276 0028      284                      dc.w    630, 30, 630, 40    ;C
+00001140= 0276 0014 0276 001E      285                      dc.w    630, 20, 630, 30    ;B
+00001148= 026C 0014 0276 0014      286                      dc.w    620, 20, 630, 20    ;A
+00001150                           287                                                                   
+00001150                           288  ; length of 10               x1, y1;  x2, y2     ;LETTER
+00001150= 0258 001E 0262 001E      289  drawLocations10s    dc.w    600, 30, 610, 30    ;G 
+00001158= 0258 001E 0258 0014      290                      dc.w    600, 30, 600, 20    ;F 
+00001160= 0258 0028 0258 001E      291                      dc.w    600, 40, 600, 30    ;E
+00001168= 0262 0028 0258 0028      292                      dc.w    610, 40, 600, 40    ;D 
+00001170= 0262 001E 0262 0028      293                      dc.w    610, 30, 610, 40    ;C
+00001178= 0262 0014 0262 001E      294                      dc.w    610, 20, 610, 30    ;B
+00001180= 0258 0014 0262 0014      295                      dc.w    600, 20, 610, 20    ;A
+00001188                           296                     
+00001188                           297                      
+00001188                           298                      
+00001188                           299                      
+00001188                           300                      
+00001188                           301                      
+00001188                           302                      
+00001188                           303      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+A0_OFFSET           20
+A1_OFFSET           24
+A2_OFFSET           28
+A3_OFFSET           2C
+A4_OFFSET           30
+A5_OFFSET           34
+A6_OFFSET           38
+ALL_REG             7FFF
+BACKGROUND_SPRITE_SHEET_POINTER  78
+BITMASKTABLE        110E
+BIT_DEPTH           20
+BMP_FILE_TYPE       424D
+CLEARSCREEN         10F4
+CLEAR_SCREEN_COMMAND  B
+CLEAR_SCREEN_MAGIC_VAL  FF00
+CR                  D
+CUR_DISPLAY_X       4
+CUR_DISPLAY_Y       8
+CUR_PLAYER_CHANGE_IN_VELOCITY  80
+CUR_PLAYER_VELOCITY  7C
+D0_OFFSET           0
+D1_OFFSET           4
+D2_OFFSET           8
+D3_OFFSET           C
+D4_OFFSET           10
+D5_OFFSET           14
+D6_OFFSET           18
+D7_OFFSET           1C
+DESTROY_OBJECT_BOOL  D8
+DISPLAY_WINDOW_HEIGHT  1E0
+DISPLAY_WINDOW_WIDTH  280
+DOUBLE_BUFFERED_MODE  11
+DRAW10S7SEGMENT     10C6
+DRAW1S7SEGMENT      1098
+DRAWING_MODE_TRAP_CODE  5C
+DRAWLOCATIONS10S    1150
+DRAWLOCATIONS1S     1118
+DRAW_LINE_TRAP_CODE  54
+DRAW_PARAMETERS     6
+DRAW_PIXEL_TRAP_CODE  52
+DRAW_RECTANGLE_COMMAND  57
+ERROR_COUNTER_OFFSET  4
+FILL_COLOR_TRAP__CODE  51
+FRAMES_SKIP_TO_DRAW  A
+GRAVITY             FFFFFF52
+IS_JUMPING          84
+JUMP_VELOCITY       14
+KEYCODE_VALUE       40
+KEY_SPACE_INPUT     20
+LF                  A
+LOOP10SDIGIT        1076
+LOOP1SDIGIT         104C
+LOOP_COUNTER        C
+OBJECT_1_HEIGHT     C8
+OBJECT_1_WIDTH      C4
+OBJECT_1_X_CROP     BC
+OBJECT_1_X_DISPLAY  CC
+OBJECT_1_Y_CROP     C0
+OBJECT_1_Y_DISPLAY  D0
+OBJECT_2_HEIGHT     B0
+OBJECT_2_WIDTH      AC
+OBJECT_2_X_CROP     A4
+OBJECT_2_X_DISPLAY  B4
+OBJECT_2_Y_CROP     A8
+OBJECT_2_Y_DISPLAY  B8
+OBJECT_3_HEIGHT     98
+OBJECT_3_WIDTH      94
+OBJECT_3_X_CROP     8C
+OBJECT_3_X_DISPLAY  9C
+OBJECT_3_Y_CROP     90
+OBJECT_3_Y_DISPLAY  A0
+OBJECT_VELOCITY     1E
+OBSTICLES_SPRITE_SHEET_POINTER  D4
+OBSTICLE_BACKGROUND_COLOR  0
+OFFSETTO10SDIGIT    1068
+OFFSETTO1DIGIT      1046
+OFFSET_TO_FILE_SIZE  2
+OFFSET_TO_IMAGE_BIT_DEPTH  1C
+OFFSET_TO_IMAGE_HEIGHT  16
+OFFSET_TO_IMAGE_OFFSET  A
+OFFSET_TO_IMAGE_WIDTH  12
+PEN_COLOR_TRAP_CODE  50
+PEN_WIDTH           2
+PEN_WIDTH_TRAP_CODE  5D
+PLAYER_SPRITE_HEIGHT  68
+PLAYER_SPRITE_SHEET_POINTER  74
+PLAYER_SPRITE_WIDTH  64
+PLAYER_SPRITE_X_CROP  5C
+PLAYER_SPRITE_X_DISPLAY  6C
+PLAYER_SPRITE_Y_CROP  60
+PLAYER_SPRITE_Y_DISPLAY  70
+PLAYER_WIDTH        4C
+PLAYER_X_CROP       44
+PLAYER_X_DISPLAY    54
+PLAYER_Y_CROP       48
+PLAYER_Y_DISPLAY    58
+RANDOM_VALUE        88
+REGISTERS_OFFSET    40
+REGISTERS_OFFSET_2  3C
+REPAINT_SCREEN_TRAP_CODE  5E
+RUNNING_SPRITE_COUNT  6
+SCORE               DC
+SCORE_ADDED_BOOL    E0
+SET_OUTPUT_RESOLUTION_TRAP_CODE  21
+SEVENSEGMENT        1026
+SKIP10SDRAW         1086
+SKIP1SDRAW          105C
+SPRITE_BACKGROUND_COLOR  808000
+STACK_POINTER_OFFSET  AC
+START               1000
+STOP                101C
+USER_INPUT_TRAP_CODE  13
+WHITE               FFFFFF

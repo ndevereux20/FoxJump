@@ -1,0 +1,102 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/7/2021 5:16:25 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  putPlayerSpriteInRegisters: 
+00000000                             8                          
+Line 9 ERROR: Invalid syntax
+00000000                             9      move.l  (PLAYER_SPRITE_X_CROP - REGISTERS_OFFSET_2)(sp),d0                            ** load the crop location of the sprite sheet 
+Line 10 ERROR: Invalid syntax
+00000000                            10      move.l  (PLAYER_SPRITE_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+Line 11 ERROR: Invalid syntax
+00000000                            11      move.l  (PLAYER_SPRITE_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+Line 12 ERROR: Invalid syntax
+00000000                            12      move.l  (PLAYER_SPRITE_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+Line 13 ERROR: Invalid syntax
+00000000                            13      move.l  (PLAYER_SPRITE_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+Line 14 ERROR: Invalid syntax
+00000000                            14      move.l  (PLAYER_SPRITE_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+Line 15 ERROR: Invalid syntax
+00000000                            15      move.l  (PLAYER_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp),a0
+00000000                            16      
+00000000                            17  
+00000000  4E75                      18      rts
+00000002                            19   
+Line 20 ERROR: Symbol value differs between first and second pass
+00000002                            20  putPlayerCropLocationInRegisters:
+Line 21 ERROR: Invalid syntax
+00000002                            21      move.l  (PLAYER_X_CROP - REGISTERS_OFFSET_2)(sp),d0
+Line 22 ERROR: Invalid syntax
+00000002                            22      move.l  (PLAYER_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+Line 23 ERROR: Invalid syntax
+00000002                            23      move.l  (PLAYER_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+Line 24 ERROR: Invalid syntax
+00000002                            24      move.l  (PLAYER_HEIGHT - REGISTERS_OFFSET_2)(sp),d3 
+Line 25 ERROR: Invalid syntax
+00000002                            25      move.l  (PLAYER_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+Line 26 ERROR: Invalid syntax
+00000002                            26      move.l  (PLAYER_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+Line 27 ERROR: Invalid syntax
+00000002                            27      move.l  (BACKGROUND_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp),(a2)
+00000002  2052                      28      move.l  (a2),a0
+00000004                            29      
+00000004  4E75                      30      rts
+00000006                            31      
+Line 32 ERROR: Symbol value differs between first and second pass
+00000006                            32  putObsticle1InRegisters: 
+Line 33 ERROR: Invalid syntax
+00000006                            33      move.l  (OBJECT_1_X_CROP - REGISTERS_OFFSET_2)(sp),d0
+Line 34 ERROR: Invalid syntax
+00000006                            34      move.l  (OBJECT_1_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+Line 35 ERROR: Invalid syntax
+00000006                            35      move.l  (OBJECT_1_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+Line 36 ERROR: Invalid syntax
+00000006                            36      move.l  (OBJECT_1_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+Line 37 ERROR: Invalid syntax
+00000006                            37      move.l  (OBJECT_1_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+Line 38 ERROR: Invalid syntax
+00000006                            38      move.l  (OBJECT_1_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+Line 39 ERROR: Invalid syntax
+00000006                            39      move.l  (OBSTICLES_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp), (a2)
+00000006  2052                      40      move.l  (a2),a0
+00000008                            41      
+00000008  4E75                      42      rts
+0000000A                            43      
+Line 44 ERROR: Symbol value differs between first and second pass
+0000000A                            44  putObsticle2InRegisters: 
+Line 45 ERROR: Invalid syntax
+0000000A                            45      move.l  (OBJECT_2_X_CROP - REGISTERS_OFFSET_2)(sp),d0
+Line 46 ERROR: Invalid syntax
+0000000A                            46      move.l  (OBJECT_2_Y_CROP - REGISTERS_OFFSET_2)(sp),d1
+Line 47 ERROR: Invalid syntax
+0000000A                            47      move.l  (OBJECT_2_WIDTH - REGISTERS_OFFSET_2)(sp),d2
+Line 48 ERROR: Invalid syntax
+0000000A                            48      move.l  (OBJECT_2_HEIGHT - REGISTERS_OFFSET_2)(sp),d3
+Line 49 ERROR: Invalid syntax
+0000000A                            49      move.l  (OBJECT_2_X_DISPLAY - REGISTERS_OFFSET_2)(sp),d4
+Line 50 ERROR: Invalid syntax
+0000000A                            50      move.l  (OBJECT_2_Y_DISPLAY - REGISTERS_OFFSET_2)(sp),d5
+Line 51 ERROR: Invalid syntax
+0000000A                            51      move.l  (OBSTICLES_SPRITE_SHEET_POINTER - REGISTERS_OFFSET_2)(sp), (a2)
+0000000A  2052                      52      move.l  (a2), a0
+0000000C                            53      
+0000000C  4E75                      54      rts 
+Line 55 WARNING: END directive missing, starting address not set
+
+31 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+PUTOBSTICLE1INREGISTERS  3E
+PUTOBSTICLE2INREGISTERS  5E
+PUTPLAYERCROPLOCATIONINREGISTERS  1E
+PUTPLAYERSPRITEINREGISTERS  0
